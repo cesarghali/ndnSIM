@@ -212,33 +212,24 @@ public:
 
     BOOST_FOREACH (const Key &subkey, key)
       {
-        typename unordered_set::iterator item = trieNode->children_.find (subkey);
-
+        trie *newNode = new trie (subkey, initialBucketSize_, bucketIncrement_, hash);
+        // std::cout << "new " << newNode << "\n";
+        newNode->parent_ = trieNode;
         
-
-        if (item == trieNode->children_.end ())
+        if (trieNode->children_.size () >= trieNode->bucketSize_)
           {
-            trie *newNode = new trie (subkey, initialBucketSize_, bucketIncrement_, hash);
-            // std::cout << "new " << newNode << "\n";
-            newNode->parent_ = trieNode;
-
-            if (trieNode->children_.size () >= trieNode->bucketSize_)
-              {
-                trieNode->bucketSize_ += trieNode->bucketIncrement_;
-                trieNode->bucketIncrement_ *= 2; // increase bucketIncrement exponentially
-
-                buckets_array newBuckets (new bucket_type [trieNode->bucketSize_]);
-                trieNode->children_.rehash (bucket_traits (newBuckets.get (), trieNode->bucketSize_));
-                trieNode->buckets_.swap (newBuckets);
-              }
-
-            std::pair< typename unordered_set::iterator, bool > ret =
-              trieNode->children_.insert (*newNode);
-
-            trieNode = &(*ret.first);
+            trieNode->bucketSize_ += trieNode->bucketIncrement_;
+            trieNode->bucketIncrement_ *= 2; // increase bucketIncrement exponentially
+            
+            buckets_array newBuckets (new bucket_type [trieNode->bucketSize_]);
+            trieNode->children_.rehash (bucket_traits (newBuckets.get (), trieNode->bucketSize_));
+            trieNode->buckets_.swap (newBuckets);
           }
-        else
-          trieNode = &(*item);
+        
+        typename unordered_set::iterator  ret =
+          trieNode->children_.insert (*newNode);
+        
+        trieNode = &(*ret);
       }
 
     if (trieNode->payload_ == PayloadTraits::empty_payload)
@@ -308,7 +299,7 @@ public:
    * @return ->second is true if prefix in ->first is longer than key
    */
   inline boost::tuple<iterator, bool, iterator>
-  find (const FullKey &key)
+  find (const FullKey &key, std::string hash = "")
   {
     trie *trieNode = this;
     iterator foundNode = (payload_ != PayloadTraits::empty_payload) ? this : 0;
@@ -316,8 +307,27 @@ public:
 
     BOOST_FOREACH (const Key &subkey, key)
       {
-        typename unordered_set::iterator item = trieNode->children_.find (subkey);
-
+        typename unordered_set::iterator item = trieNode->children_.end();
+        std::pair<typename unordered_set::iterator, typename unordered_set::iterator> range = trieNode ->children_.equal_range(subkey);
+        if (hash != "")
+          {
+            while (range.first != range.second)
+              {
+                if (range.first->hash_ == hash)
+                  {
+                    *range.first++;
+                  }
+                else
+                  {
+                    item = range.first;
+                    break;
+                  }
+              }
+          }
+        else
+          {
+            item = range.first;
+          }
         
         if (item == trieNode->children_.end ())
           {
@@ -344,7 +354,7 @@ public:
    */
   template<class Predicate>
   inline boost::tuple<iterator, bool, iterator>
-  find_if (const FullKey &key, Predicate pred)
+  find_if (const FullKey &key, Predicate pred, std::string hash = "")
   {
     trie *trieNode = this;
     iterator foundNode = (payload_ != PayloadTraits::empty_payload) ? this : 0;
@@ -352,8 +362,27 @@ public:
 
     BOOST_FOREACH (const Key &subkey, key)
       {
-        typename unordered_set::iterator item = trieNode->children_.find (subkey);
-
+        typename unordered_set::iterator item = trieNode->children_.end();
+        std::pair<typename unordered_set::iterator, typename unordered_set::iterator> range = trieNode ->children_.equal_range(subkey);
+        if (hash != "")
+          {
+            while (range.first != range.second)
+              {
+                if (range.first->hash_ == hash)
+                  {
+                    *range.first++;
+                  }
+                else
+                  {
+                    item = range.first;
+                    break;
+                  }
+              }
+          }
+        else
+          {
+            item = range.first;
+          }
 
         if (item == trieNode->children_.end ())
           {
@@ -496,7 +525,7 @@ private:
                                          boost::intrusive::unordered_set_member_hook< >,
                                          &trie::unordered_set_member_hook_ > member_hook;
 
-  typedef boost::intrusive::unordered_set< trie, member_hook > unordered_set;
+  typedef boost::intrusive::unordered_multiset< trie, member_hook > unordered_set;
   typedef typename unordered_set::bucket_type   bucket_type;
   typedef typename unordered_set::bucket_traits bucket_traits;
 

@@ -54,10 +54,10 @@ public:
   }
 
   inline std::pair< iterator, bool >
-  insert (const FullKey &key, typename PayloadTraits::insert_type payload)
+  insert (const FullKey &key, typename PayloadTraits::insert_type payload, std::string hash = "")
   {
     std::pair<iterator, bool> item =
-      trie_.insert (key, payload);
+      trie_.insert (key, payload, hash);
 
     if (item.second) // real insert
       {
@@ -137,11 +137,11 @@ public:
    * @brief Find a node that has the longest common prefix with key (FIB/PIT lookup)
    */
   inline iterator
-  longest_prefix_match (const FullKey &key)
+  longest_prefix_match (const FullKey &key, std::string hash = "")
   {
     iterator foundItem, lastItem;
     bool reachLast;
-    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key);
+    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key, hash);
     if (foundItem != trie_.end ())
       {
         policy_.lookup (s_iterator_to (foundItem));
@@ -180,11 +180,11 @@ public:
    * @brief Find a node that has prefix at least as the key (cache lookup)
    */
   inline iterator
-  deepest_prefix_match (const FullKey &key)
+  deepest_prefix_match (const FullKey &key, std::string hash = "")
   {
     iterator foundItem, lastItem;
     bool reachLast;
-    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key);
+    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key, hash);
 
     // guard in case we don't have anything in the trie
     if (lastItem == trie_.end ())
@@ -210,11 +210,11 @@ public:
    */
   template<class Predicate>
   inline iterator
-  deepest_prefix_match (const FullKey &key, Predicate pred)
+  deepest_prefix_match (const FullKey &key, Predicate pred, std::string hash = "")
   {
     iterator foundItem, lastItem;
     bool reachLast;
-    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key);
+    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key, hash);
 
     // guard in case we don't have anything in the trie
     if (lastItem == trie_.end ())
@@ -222,7 +222,7 @@ public:
 
     if (reachLast)
       {
-        foundItem = lastItem->find_if (pred); // may or may not find something
+        foundItem = lastItem->find_if (pred, hash); // may or may not find something
         if (foundItem == trie_.end ())
           {
             return trie_.end ();

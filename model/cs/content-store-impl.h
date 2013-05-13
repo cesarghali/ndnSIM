@@ -163,8 +163,11 @@ ContentStoreImpl<Policy>::Lookup (Ptr<const Interest> interest)
 {
   NS_LOG_FUNCTION (this << interest->GetName ());
 
+  // Read the hash from the exclusion filter if exists in the interest
+  std::string hash = "";
+
   /// @todo Change to search with predicate
-  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName ());
+  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName (), hash);
 
   if (node != this->end ())
     {
@@ -242,12 +245,12 @@ ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet
       strhash = "";
     }
 
-  std::list<std::string> components = header->GetName().GetComponents();
-  components.push_back(strhash);
-  Name content_name (components);
+  // std::list<std::string> components = header->GetName().GetComponents();
+  // components.push_back(strhash);
+  // Name content_name (components);
 
   Ptr< entry > newEntry = Create< entry > (this, header, packet);
-  std::pair< typename super::iterator, bool > result = super::insert (content_name, newEntry);
+  std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry, strhash);
 
   if (result.first != super::end ())
     {
