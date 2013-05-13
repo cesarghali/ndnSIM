@@ -32,6 +32,8 @@
 #include "ns3/string.h"
 
 #include "../../utils/trie/trie-with-policy.h"
+#include <openssl/sha.h>
+
 
 namespace ns3 {
 namespace ndn {
@@ -187,8 +189,65 @@ ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet
 {
   NS_LOG_FUNCTION (this << header->GetName ());
 
+  // Calculate the SHA_1 has of the packet payload
+  std::string strhash;
+  std::stringstream s;
+  unsigned char* hash = ((unsigned char*)(malloc(20)));
+  memset(hash, 0, 20);
+
+  PacketMetadata::ItemIterator i = packet->BeginItem ();
+  PacketMetadata::Item item;
+  int size = 0;
+  while (i.HasNext ())
+    {
+      item = i.Next();
+      size = item.currentSize;
+      uint8_t* buffer = ((uint8_t*)(malloc(size)));
+      memset (buffer, 0, size);
+      memcpy (buffer, &item, size);
+
+      static const char* const lut = "0123456789ABCDEF";
+      std::string input;
+      size_t len;
+      size_t i;
+      unsigned char c;
+
+      switch (item.type)
+        {
+        case PacketMetadata::Item::PAYLOAD:
+          SHA1(buffer, size, hash);
+          input.reserve(20);
+          for (i = 0; i < 20; i++)
+            {
+              input.push_back(hash[i]);
+            }
+          len = input.length();
+          
+          strhash.reserve(2 * len);
+          for (i = 0; i < len; ++i)
+            {
+              c = input[i];
+              strhash.push_back(lut[c >> 4]);
+              strhash.push_back(lut[c & 15]);
+            }
+          break;
+          
+        default:
+          break;
+        }
+    }
+
+  if (size == 0)
+    {
+      strhash = "";
+    }
+
+  std::list<std::string> components = header->GetName().GetComponents();
+  components.push_back(strhash);
+  Name content_name (components);
+
   Ptr< entry > newEntry = Create< entry > (this, header, packet);
-  std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry);
+  std::pair< typename super::iterator, bool > result = super::insert (content_name, newEntry);
 
   if (result.first != super::end ())
     {

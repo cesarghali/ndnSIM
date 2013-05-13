@@ -151,7 +151,7 @@ public:
   typedef PayloadTraits payload_traits;
 
   inline
-  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10)
+  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10, std::string hash = "")
     : key_ (key)
     , initialBucketSize_ (bucketSize)
     , bucketIncrement_ (bucketIncrement)
@@ -160,6 +160,7 @@ public:
     , children_ (bucket_traits (buckets_.get (), bucketSize_))
     , payload_ (PayloadTraits::empty_payload)
     , parent_ (0)
+    , hash_ (hash)
   {
   }
 
@@ -203,16 +204,21 @@ public:
 
   inline std::pair<iterator, bool>
   insert (const FullKey &key,
-          typename PayloadTraits::insert_type payload)
+          typename PayloadTraits::insert_type payload, std::string hash = "")
   {
+    // Full key is the whole content name, subkey is splitted based on '/'
+
     trie *trieNode = this;
 
     BOOST_FOREACH (const Key &subkey, key)
       {
         typename unordered_set::iterator item = trieNode->children_.find (subkey);
+
+        
+
         if (item == trieNode->children_.end ())
           {
-            trie *newNode = new trie (subkey, initialBucketSize_, bucketIncrement_);
+            trie *newNode = new trie (subkey, initialBucketSize_, bucketIncrement_, hash);
             // std::cout << "new " << newNode << "\n";
             newNode->parent_ = trieNode;
 
@@ -311,6 +317,8 @@ public:
     BOOST_FOREACH (const Key &subkey, key)
       {
         typename unordered_set::iterator item = trieNode->children_.find (subkey);
+
+        
         if (item == trieNode->children_.end ())
           {
             reachLast = false;
@@ -345,6 +353,8 @@ public:
     BOOST_FOREACH (const Key &subkey, key)
       {
         typename unordered_set::iterator item = trieNode->children_.find (subkey);
+
+
         if (item == trieNode->children_.end ())
           {
             reachLast = false;
@@ -512,6 +522,8 @@ private:
 
   typename PayloadTraits::storage_type payload_;
   trie *parent_; // to make cleaning effective
+
+  std::string hash_;
 };
 
 
