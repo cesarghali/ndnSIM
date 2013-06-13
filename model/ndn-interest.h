@@ -32,6 +32,7 @@
 #include <list>
 
 #include "ndn-name.h"
+#include "ndn-exclusion.h"
 
 namespace ns3 {
 
@@ -50,11 +51,13 @@ namespace ndn {
   *	     	     Name 
   *	     	     Selectors 
   *	     	     Options
+  *                  Exclusion
   *
-  * Minumum size of the Interest packet: 1 + 4 + 2 + 1 + (2 + 0) + (2 + 0) + (2 + 0) = 14
+  * Minumum size of the Interest packet: 1 + 4 + 2 + 1 + (2 + 0) + (2 + 0) + (2 + 0) + (2 + 0) = 16
   *
-  * Maximum size of the Interest packet: 1 + 4 + 2 + 1 + (2 + 65535) + (2 + 65535) + (2 + 65535) = 196619
+  * Maximum size of the Interest packet: 1 + 4 + 2 + 1 + (2 + 65535) + (2 + 65535) + (2 + 65535) + (2 + (20 * 65535)) = 1507321
   *
+  * The number of exclusions indicates the number of digests contained in the exclusions section of the interest. The digest function used is SHA_1
   * ::
   *
   *        0                   1                   2                   3
@@ -81,6 +84,12 @@ namespace ndn {
   *        ~                                                               ~
   *        ~                          Options                              ~
   *        |							           |	
+  *        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  *        |     Number of Exclusion       |                               |
+  *        |-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
+  *        ~                                                               ~
+  *        ~                         Exclusions                            ~
+  *        |                                                               |
   *        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   * **/
 class Interest : public SimpleRefCount<Interest, Header>
@@ -189,6 +198,18 @@ public:
    */
   uint32_t
   GetNonce () const;
+
+  void
+  SetExclusion (Ptr<Exclusion> exclusion);
+  
+  void
+  SetExclusion (const Exclusion &exclusion);
+
+  const Exclusion&
+  GetExclusion () const;
+
+  Ptr<const Exclusion>
+  GetExclusionPtr () const;
   
   /**
    * @brief NACK Type
@@ -263,6 +284,9 @@ private:
   Time  m_interestLifetime;      ///< InterestLifetime
   uint32_t m_nonce;              ///< Nonce. not used if zero
   uint8_t  m_nackType;           ///< Negative Acknowledgement type
+
+  uint16_t m_exclusionNum;       ///< The number of execluded content objects
+  Ptr<Exclusion> m_exclusion;    ///< The digests of the excluded content objects
 };
 
 typedef Interest InterestHeader;
