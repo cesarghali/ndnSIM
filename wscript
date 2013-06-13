@@ -135,6 +135,7 @@ def build(bld):
         "model/ndn-content-object.h",
         "model/ndn-name-components.h",
         "model/ndn-name.h",
+        "model/ndn-exclusion.h",
 
         "model/cs/ndn-content-store.h",
 
