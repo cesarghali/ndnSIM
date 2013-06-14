@@ -51,6 +51,7 @@ Interest::Interest ()
   , m_nackType (NORMAL_INTEREST)
   , m_exclusionNum (0)
 {
+  m_exclusion = new Exclusion();
 }
 
 Interest::Interest (const Interest &interest)
@@ -61,6 +62,12 @@ Interest::Interest (const Interest &interest)
   , m_nackType            (interest.m_nackType)
   , m_exclusionNum        (interest.m_exclusionNum)
 {
+  m_exclusion = new Exclusion();
+  Exclusion::const_iterator it = interest.GetExclusion().begin();
+  while (it != interest.GetExclusion().end())
+    {
+      m_exclusion->Add(*it);
+    }
 }
 
 Ptr<Interest>
@@ -279,3 +286,4 @@ Interest::Print (std::ostream &os) const
 } // namespace ndn
 } // namespace ns3
 
+ 

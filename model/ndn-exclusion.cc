@@ -86,6 +86,17 @@ namespace ns3 {
       return m_hash.size();
     }
 
+    bool Exclusion::Contains (std::string digest) const
+    {
+      BOOST_FOREACH (const std::string &hash, m_hash)
+	{
+	  if (hash == digest)
+	    {
+	      return true;
+	    }
+	}
 
+      return false;
+    }
   } // namespace ndn
 } // namespace ns3

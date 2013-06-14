@@ -163,11 +163,11 @@ ContentStoreImpl<Policy>::Lookup (Ptr<const Interest> interest)
 {
   NS_LOG_FUNCTION (this << interest->GetName ());
 
-  // Read the hash from the exclusion filter if exists in the interest
-  std::string hash = "";
+  // Read the exclusion filter if exists in the interest
+  ns3::Ptr<const Exclusion> exclusionFilter = interest->GetExclusionPtr ();
 
   /// @todo Change to search with predicate
-  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName (), hash);
+  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName ()/*, exclusionFilter*/);
 
   if (node != this->end ())
     {

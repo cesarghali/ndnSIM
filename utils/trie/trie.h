@@ -32,6 +32,8 @@
 #include <boost/foreach.hpp>
 #include <boost/mpl/if.hpp>
 
+#include "../../model/ndn-exclusion.h"
+
 namespace ns3 {
 namespace ndn {
 namespace ndnSIM {
@@ -299,7 +301,7 @@ public:
    * @return ->second is true if prefix in ->first is longer than key
    */
   inline boost::tuple<iterator, bool, iterator>
-  find (const FullKey &key, std::string hash = "")
+  find (const FullKey &key, ns3::Ptr<const Exclusion> exclusionFilter = NULL)
   {
     trie *trieNode = this;
     iterator foundNode = (payload_ != PayloadTraits::empty_payload) ? this : 0;
@@ -309,11 +311,11 @@ public:
       {
         typename unordered_set::iterator item = trieNode->children_.end();
         std::pair<typename unordered_set::iterator, typename unordered_set::iterator> range = trieNode ->children_.equal_range(subkey);
-        if (hash != "")
+        if (exclusionFilter != NULL)
           {
             while (range.first != range.second)
               {
-                if (range.first->hash_ == hash)
+                if (exclusionFilter->Contains(range.first->hash_) == true)
                   {
                     *range.first++;
                   }
@@ -354,7 +356,7 @@ public:
    */
   template<class Predicate>
   inline boost::tuple<iterator, bool, iterator>
-  find_if (const FullKey &key, Predicate pred, std::string hash = "")
+  find_if (const FullKey &key, Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL)
   {
     trie *trieNode = this;
     iterator foundNode = (payload_ != PayloadTraits::empty_payload) ? this : 0;
@@ -364,11 +366,11 @@ public:
       {
         typename unordered_set::iterator item = trieNode->children_.end();
         std::pair<typename unordered_set::iterator, typename unordered_set::iterator> range = trieNode ->children_.equal_range(subkey);
-        if (hash != "")
+        if (exclusionFilter != NULL)
           {
             while (range.first != range.second)
               {
-                if (range.first->hash_ == hash)
+                if (exclusionFilter->Contains(range.first->hash_) == true)
                   {
                     *range.first++;
                   }
@@ -435,9 +437,10 @@ public:
    */
   template<class Predicate>
   inline const iterator
-  find_if (Predicate pred)
+  find_if (Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL)
   {
-    if (payload_ != PayloadTraits::empty_payload && pred (payload_))
+    if (payload_ != PayloadTraits::empty_payload && pred (payload_) &&
+        exclusionFilter != NULL && !exclusionFilter->Contains(hash_))
       return this;
 
     typedef trie<FullKey, PayloadTraits, PolicyHook> trie;
@@ -446,7 +449,7 @@ public:
          subnode++ )
       // BOOST_FOREACH (const trie &subnode, children_)
       {
-        iterator value = subnode->find_if (pred);
+        iterator value = subnode->find_if (pred, exclusionFilter);
         if (value != 0)
           return value;
       }

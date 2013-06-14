@@ -6,6 +6,8 @@
 
 #include "ns3/simple-ref-count.h"
 #include "ns3/buffer.h"
+#include "ns3/attribute.h"
+#include "ns3/attribute-helper.h"
 
 #include <string>
 #include <list>
@@ -26,17 +28,17 @@ namespace ns3 {
       uint32_t Serialize(Buffer::Iterator start) const;
       uint32_t Deserialize(Buffer::Iterator start);
 
-      inline void Add(std::string hash);
-      inline iterator begin();
-      inline iterator end();
-      inline const_iterator begin() const;
-      inline const_iterator end() const;
-      inline size_t size () const;
+      void Add(std::string hash);
+      iterator begin();
+      iterator end();
+      const_iterator begin() const;
+      const_iterator end() const;
+      size_t size () const;
+      bool Contains (std::string digest) const;
 
     private:
       std::list<std::string> m_hash;
-    };
-    
+    };    
   } // namespace ndn
 } // namespace nd3
 
