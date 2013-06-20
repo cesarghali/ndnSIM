@@ -36,6 +36,9 @@
 #include <boost/ref.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/lambda/bind.hpp>
+
+#include <time.h>
+#include <sys/time.h>
 namespace ll = boost::lambda;
 
 NS_LOG_COMPONENT_DEFINE ("ndn.Producer");
@@ -120,6 +123,15 @@ Producer::OnInterest (const Ptr<const Interest> &interest, Ptr<Packet> origPacke
   Ptr<ContentObject> header = Create<ContentObject> ();
   header->SetName (Create<Name> (interest->GetName ()));
   header->SetFreshness (m_freshness);
+  
+  // Add timestamp
+  Time timestamp(time(0));
+  header->SetTimestamp(timestamp);
+  // Add signature
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
+  header->SetSignature(rand() * rand());
 
   NS_LOG_INFO ("node("<< GetNode()->GetId() <<") respodning with ContentObject:\n" << boost::cref(*header));
   
