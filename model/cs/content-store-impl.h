@@ -167,7 +167,7 @@ ContentStoreImpl<Policy>::Lookup (Ptr<const Interest> interest)
   ns3::Ptr<const Exclusion> exclusionFilter = interest->GetExclusionPtr ();
 
   /// @todo Change to search with predicate
-  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName ()/*, exclusionFilter*/);
+  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName (), exclusionFilter);
 
   if (node != this->end ())
     {
@@ -198,56 +198,55 @@ ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet
   unsigned char* hash = ((unsigned char*)(malloc(20)));
   memset(hash, 0, 20);
 
-  PacketMetadata::ItemIterator i = packet->BeginItem ();
-  PacketMetadata::Item item;
-  int size = 0;
-  while (i.HasNext ())
+  // NEW CODE //
+  
+  static const char* const lut = "0123456789ABCDEF";
+  std::string input;
+  int len;
+  unsigned char c;
+
+  std::ostringstream convert;
+  convert << header->GetName();
+  std::string name = convert.str();
+  int size = name.size() + 12;     // 12 = 4 + 4 + 4 for timestamp, freshness, and signature
+  uint8_t* buffer = ((uint8_t*)(malloc(size)));
+  memset(buffer, 0, size);
+
+  int offset = 0;
+  memcpy(buffer, name.c_str(), name.size());
+  offset += name.size();
+
+  uint32_t timestamp = static_cast<uint32_t>(header->GetTimestamp().ToInteger(Time::S));
+  memcpy(buffer + offset, &timestamp, sizeof(uint32_t));
+  offset += sizeof(uint32_t);
+
+  uint32_t freshness = static_cast<uint32_t>(header->GetFreshness().ToInteger(Time::S));
+  memcpy(buffer + offset, &freshness, sizeof(uint32_t));
+  offset += sizeof(uint32_t);
+
+  uint32_t signature = header->GetSignature();
+  memcpy(buffer + offset, &signature, sizeof(uint32_t));
+
+  SHA1(buffer, size, hash);
+  input.reserve(20);
+  for (int i = 0; i < 20; i++)
     {
-      item = i.Next();
-      size = item.currentSize;
-      uint8_t* buffer = ((uint8_t*)(malloc(size)));
-      memset (buffer, 0, size);
-      memcpy (buffer, &item, size);
-
-      static const char* const lut = "0123456789ABCDEF";
-      std::string input;
-      size_t len;
-      size_t i;
-      unsigned char c;
-
-      switch (item.type)
-        {
-        case PacketMetadata::Item::PAYLOAD:
-          SHA1(buffer, size, hash);
-          input.reserve(20);
-          for (i = 0; i < 20; i++)
-            {
-              input.push_back(hash[i]);
-            }
-          len = input.length();
-          
-          strhash.reserve(2 * len);
-          for (i = 0; i < len; ++i)
-            {
-              c = input[i];
-              strhash.push_back(lut[c >> 4]);
-              strhash.push_back(lut[c & 15]);
-            }
-          break;
-          
-        default:
-          break;
-        }
+      input.push_back(hash[i]);
     }
-
+  len = input.length();
+          
+  strhash.reserve(2 * len);
+  for (int i = 0; i < len; ++i)
+    {
+      c = input[i];
+      strhash.push_back(lut[c >> 4]);
+      strhash.push_back(lut[c & 15]);
+    }  
+  
   if (size == 0)
     {
       strhash = "";
     }
-
-  // std::list<std::string> components = header->GetName().GetComponents();
-  // components.push_back(strhash);
-  // Name content_name (components);
 
   Ptr< entry > newEntry = Create< entry > (this, header, packet);
   std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry, strhash);
