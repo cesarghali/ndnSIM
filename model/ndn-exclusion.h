@@ -2,7 +2,7 @@
 #ifndef _NDN_EXCLUSION_H_
 #define _NDN_EXCLUSION_H_
 
-#define HASH_SIZE 20    // the hash used is SHA_1
+#define HASH_SIZE 20 * 2    // the hash used is SHA_1 and it is represented in hex
 
 #include "ns3/simple-ref-count.h"
 #include "ns3/buffer.h"
@@ -36,7 +36,7 @@ namespace ns3 {
       size_t size () const;
       bool Contains (std::string digest) const;
 
-    private:
+    /* private: */
       std::list<std::string> m_hash;
     };    
   } // namespace ndn
