@@ -53,9 +53,9 @@ namespace ndn {
   *	     	     Options
   *                  Exclusion
   *
-  * Minumum size of the Interest packet: 1 + 4 + 2 + 1 + (2 + 0) + (2 + 0) + (2 + 0) + (2 + 0) = 16
+  * Minumum size of the Interest packet: 1 + 4 + 2 + 1 + (2 + 0) + (2 + 0) + (2 + 0) + (1 + 0) = 15
   *
-  * Maximum size of the Interest packet: 1 + 4 + 2 + 1 + (2 + 65535) + (2 + 65535) + (2 + 65535) + (2 + (20 * 65535)) = 1507321
+  * Maximum size of the Interest packet: 1 + 4 + 2 + 1 + (2 + 65535) + (2 + 65535) + (2 + 65535) + (1 + (40 * 10)) = 197020
   *
   * The number of exclusions indicates the number of digests contained in the exclusions section of the interest. The digest function used is SHA_1
   * ::
@@ -77,7 +77,7 @@ namespace ndn {
   *        |-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
   *        ~                                                               ~
   *        ~                          Selectors                            ~
-  *        |							            |	
+  *        |	                                                           |	
   *        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   *        |            Length             |                               |
   *	   |-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
@@ -85,8 +85,8 @@ namespace ndn {
   *        ~                          Options                              ~
   *        |							           |	
   *        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  *        |     Number of Exclusion       |                               |
-  *        |-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
+  *        |  # of Excls.  |                                               |
+  *        |-+-+-+-+-+-+-+-+                                               |
   *        ~                                                               ~
   *        ~                         Exclusions                            ~
   *        |                                                               |

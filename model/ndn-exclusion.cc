@@ -11,29 +11,26 @@ namespace ns3 {
     Exclusion::Exclusion()
     {
     }
-    
-    Exclusion::Exclusion(const std::list<std::string> &components)
-    {
-      BOOST_FOREACH (const std::string &component, components)
-	{
-	  Add(component);
-	}
-    }
 
     size_t Exclusion::GetSerializedSize() const
     {
-      return (this->size() * HASH_SIZE) + 2;
+      return (this->size() * HASH_SIZE) + 1;
+    }
+
+    size_t Exclusion::GetMaxSerializedSize() const
+    {
+      return (MAX_EXCLUSIONS * 40) + 1;
     }
 
     uint32_t Exclusion::Serialize(Buffer::Iterator start) const
     {
       Buffer::Iterator it = start;
-      it.WriteU16(static_cast<uint16_t>(this->size()));
+      it.WriteU8(static_cast<uint8_t>(this->size()));
       
       Exclusion::const_iterator item = this->begin();
       while (item != this->end())
 	{
-	  it.Write(reinterpret_cast<const uint8_t*>(item->c_str()), HASH_SIZE);
+	  it.Write(reinterpret_cast<const uint8_t*>(*item), HASH_SIZE);
 	  item++;
 	}
 
@@ -43,21 +40,25 @@ namespace ns3 {
     uint32_t Exclusion::Deserialize(Buffer::Iterator start)
     {
       Buffer::Iterator it = start;
-      uint16_t size = it.ReadU16();
+      uint8_t size = it.ReadU8();
       for (uint16_t i = 0; i < size; i++)
 	{
-	  uint16_t length = HASH_SIZE;
-	  uint8_t tmp[length];
-	  it.Read(tmp, length);
+	  uint8_t tmp[40];
+	  it.Read(tmp, 40);
 
-	  this->Add(std::string(reinterpret_cast<const char*>(tmp), HASH_SIZE));
+	  this->Add(reinterpret_cast<char*>(tmp));
 	}
+
+      NS_ASSERT (GetSerializedSize() == (it.GetDistanceFrom(start)));
 
       return it.GetDistanceFrom(start);
     }
 
-    void Exclusion::Add(std::string hash)
+    void Exclusion::Add(char* hash)
     {
+      if (this->size() >= MAX_EXCLUSIONS)
+	return;
+
       m_hash.push_back(hash);
     }
 
@@ -88,9 +89,12 @@ namespace ns3 {
 
     bool Exclusion::Contains (std::string digest) const
     {
-      BOOST_FOREACH (const std::string &hash, m_hash)
+      if (digest.size() != HASH_SIZE)
+	return false;
+
+      BOOST_FOREACH (char* hash, m_hash)
 	{
-	  if (hash == digest)
+	  if (memcmp(hash, digest.c_str(), HASH_SIZE) == 0)
 	    {
 	      return true;
 	    }

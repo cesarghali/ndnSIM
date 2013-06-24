@@ -180,7 +180,7 @@ Interest::GetExclusionPtr () const
 uint32_t
 Interest::GetSerializedSize (void) const
 {
-  size_t size = 2 + (1 + 4 + 2 + 1 + (m_name->GetSerializedSize ()) + (2 + 0) + (2 + 0) + m_exclusion->GetSerializedSize());
+  size_t size = 2 + (1 + 4 + 2 + 1 + (m_name->GetSerializedSize ()) + (2 + 0) + (2 + 0) + m_exclusion->GetMaxSerializedSize());
   NS_LOG_INFO ("Serialize size = " << size);
 
   return size;
@@ -237,8 +237,8 @@ Interest::Deserialize (Buffer::Iterator start)
   i.ReadU16 ();
 
   m_exclusion = Create<Exclusion> ();
-  offset = m_exclusion->Deserialize (i);
-  i.Next (offset);
+  m_exclusion->Deserialize (i);
+  i.Next (m_exclusion->GetMaxSerializedSize());
 
   NS_ASSERT (GetSerializedSize () == (i.GetDistanceFrom (start)));
 
