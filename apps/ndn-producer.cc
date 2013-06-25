@@ -125,13 +125,12 @@ Producer::OnInterest (const Ptr<const Interest> &interest, Ptr<Packet> origPacke
   header->SetFreshness (m_freshness);
   
   // Add timestamp
-  Time timestamp(time(0));
-  header->SetTimestamp(timestamp);
+  header->SetTimestamp(Simulator::Now());
   // Add signature
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
-  header->SetSignature(rand() * rand());
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  srand((int)Simulator::Now().GetNanoSeconds() + tv.tv_usec);
+  header->SetSignature(rand());
 
   NS_LOG_INFO ("node("<< GetNode()->GetId() <<") respodning with ContentObject:\n" << boost::cref(*header));
   
