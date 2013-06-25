@@ -20,7 +20,6 @@ namespace ns3 {
 
     size_t Exclusion::GetMaxSerializedSize() const
     {
-      return (count * HASH_SIZE) + 1;
       return (MAX_EXCLUSIONS * HASH_SIZE) + 1;
     }
 
