@@ -51,7 +51,7 @@ Interest::Interest ()
   , m_nackType (NORMAL_INTEREST)
   , m_exclusionNum (0)
 {
-  m_exclusion = new Exclusion();
+  m_exclusion = Create<Exclusion> ();
 }
 
 Interest::Interest (const Interest &interest)
@@ -62,12 +62,12 @@ Interest::Interest (const Interest &interest)
   , m_nackType            (interest.m_nackType)
   , m_exclusionNum        (interest.m_exclusionNum)
 {
-  m_exclusion = new Exclusion();
-  Exclusion::const_iterator it = interest.GetExclusion().begin();
-  while (it != interest.GetExclusion().end())
-    {
-      m_exclusion->Add(*it);
-    }
+  m_exclusion = Create<Exclusion> ();
+  // std::vector<std::string> hash_list = interest.GetExclusion().GetHashList();
+  // for (uint i = 0; i < hash_list.size(); i++)
+  //   {
+  //     m_exclusion->Add(hash_list.at(i));
+  //   }
 }
 
 Ptr<Interest>
@@ -152,16 +152,9 @@ Interest::GetNack () const
   return m_nackType;
 }
 
-void
-Interest::SetExclusion (Ptr<Exclusion> exclusion)
+void Interest::AddHash(std::string hash)
 {
-  m_exclusion = exclusion;
-}
-
-void
-Interest::SetExclusion (const Exclusion &exclusion)
-{
-  m_exclusion = Create<Exclusion> (exclusion);
+  m_exclusion->Add(hash);
 }
 
 const Exclusion&

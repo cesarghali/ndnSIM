@@ -199,11 +199,7 @@ public:
   uint32_t
   GetNonce () const;
 
-  void
-  SetExclusion (Ptr<Exclusion> exclusion);
-  
-  void
-  SetExclusion (const Exclusion &exclusion);
+  void AddHash(std::string hash);
 
   const Exclusion&
   GetExclusion () const;
