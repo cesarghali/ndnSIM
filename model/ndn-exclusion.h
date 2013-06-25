@@ -12,7 +12,7 @@
 #include "ns3/attribute-helper.h"
 
 #include <string>
-#include <list>
+#include <vector>
 
 namespace ns3 {
   namespace ndn {
@@ -20,9 +20,6 @@ namespace ns3 {
     class Exclusion : public SimpleRefCount<Exclusion>
     {
     public:
-      typedef std::list<char*>::iterator       iterator;
-      typedef std::list<char*>::const_iterator const_iterator;
-
       Exclusion();
 
       size_t GetSerializedSize() const;
@@ -30,16 +27,14 @@ namespace ns3 {
       uint32_t Serialize(Buffer::Iterator start) const;
       uint32_t Deserialize(Buffer::Iterator start);
 
-      void Add(char* hash);
-      iterator begin();
-      iterator end();
-      const_iterator begin() const;
-      const_iterator end() const;
-      size_t size () const;
+      std::vector<std::string> GetHashList();
+      void Add(std::string hash);
+      int size () const;
       bool Contains (std::string digest) const;
 
     /* private: */
-      std::list<char*> m_hash;
+      std::string m_hash[MAX_EXCLUSIONS];
+      int count;
     };    
   } // namespace ndn
 } // namespace nd3
