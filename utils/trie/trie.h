@@ -153,7 +153,7 @@ public:
   typedef PayloadTraits payload_traits;
 
   inline
-  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10, std::string hash = "")
+  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10, char* hash = NULL)
     : key_ (key)
     , initialBucketSize_ (bucketSize)
     , bucketIncrement_ (bucketIncrement)
@@ -162,8 +162,12 @@ public:
     , children_ (bucket_traits (buckets_.get (), bucketSize_))
     , payload_ (PayloadTraits::empty_payload)
     , parent_ (0)
-    , hash_ (hash)
   {
+    memset(hash_, 0, HASH_SIZE + 1);
+    if (hash != NULL)
+      {
+        memcpy(hash_, hash, HASH_SIZE);
+      }
   }
 
   inline
@@ -206,7 +210,7 @@ public:
 
   inline std::pair<iterator, bool>
   insert (const FullKey &key,
-          typename PayloadTraits::insert_type payload, std::string hash = "")
+          typename PayloadTraits::insert_type payload, char* hash = NULL)
   {
     // Full key is the whole content name, subkey is splitted based on '/'
 
@@ -228,10 +232,10 @@ public:
             trieNode->buckets_.swap (newBuckets);
           }
         
-        typename unordered_set::iterator  ret =
+        std::pair<typename unordered_set::iterator, bool> ret =
           trieNode->children_.insert (*newNode);
         
-        trieNode = &(*ret);
+        trieNode = &(*ret.first);
       }
 
     if (trieNode->payload_ == PayloadTraits::empty_payload)
@@ -528,7 +532,7 @@ private:
                                          boost::intrusive::unordered_set_member_hook< >,
                                          &trie::unordered_set_member_hook_ > member_hook;
 
-  typedef boost::intrusive::unordered_multiset< trie, member_hook > unordered_set;
+  typedef boost::intrusive::unordered_set< trie, member_hook > unordered_set;
   typedef typename unordered_set::bucket_type   bucket_type;
   typedef typename unordered_set::bucket_traits bucket_traits;
 
@@ -555,7 +559,7 @@ private:
   typename PayloadTraits::storage_type payload_;
   trie *parent_; // to make cleaning effective
 
-  std::string hash_;
+  char hash_[HASH_SIZE + 1];
 };
 
 
