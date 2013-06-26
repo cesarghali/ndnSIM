@@ -152,7 +152,8 @@ Interest::GetNack () const
   return m_nackType;
 }
 
-void Interest::AddHash(std::string hash)
+void
+Interest::AddExclusion (char* hash)
 {
   m_exclusion->Add(hash);
 }
@@ -173,7 +174,7 @@ Interest::GetExclusionPtr () const
 uint32_t
 Interest::GetSerializedSize (void) const
 {
-  size_t size = 2 + (1 + 4 + 2 + 1 + (m_name->GetSerializedSize ()) + (2 + 0) + (2 + 0) + m_exclusion->GetMaxSerializedSize());
+  size_t size = 2 + (1 + 4 + 2 + 1 + (m_name->GetSerializedSize ()) + (2 + 0) + (2 + 0) + m_exclusion->GetSerializedSize ());
   NS_LOG_INFO ("Serialize size = " << size);
 
   return size;
@@ -229,9 +230,8 @@ Interest::Deserialize (Buffer::Iterator start)
   i.ReadU16 ();
   i.ReadU16 ();
 
-  m_exclusion = Create<Exclusion> ();
-  m_exclusion->Deserialize (i);
-  i.Next (m_exclusion->GetMaxSerializedSize());
+  offset = m_exclusion->Deserialize (i);
+  i.Next (offset);
 
   NS_ASSERT (GetSerializedSize () == (i.GetDistanceFrom (start)));
 
