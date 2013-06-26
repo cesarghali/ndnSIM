@@ -30,7 +30,7 @@ namespace ns3 {
       
       for (int i = 0; i < count; i++)
 	{
-	  it.Write(reinterpret_cast<const uint8_t*>(m_hash[i].c_str()), HASH_SIZE);
+	  it.Write(reinterpret_cast<const uint8_t*>(m_hash[i]), HASH_SIZE);
 	}
 
       return it.GetDistanceFrom(start);
@@ -47,7 +47,7 @@ namespace ns3 {
 	  memset(tmp, 0, HASH_SIZE);
 	  it.Read(tmp, HASH_SIZE);
 
-	  this->Add(std::string((char*)tmp, HASH_SIZE));
+	  this->Add((char*)tmp);
 	}
 
       NS_ASSERT (GetSerializedSize() == (it.GetDistanceFrom(start)));
@@ -55,12 +55,16 @@ namespace ns3 {
       return it.GetDistanceFrom(start);
     }
 
-    void Exclusion::Add(std::string hash)
+    void Exclusion::Add(char* hash)
     {
       if (count >= MAX_EXCLUSIONS)
 	return;
 
-      m_hash[count] = hash;
+      if (Contains(hash) == true)
+	return;
+
+      memset(m_hash[count], 0, HASH_SIZE + 1);
+      memcpy(m_hash[count], hash, HASH_SIZE);
       count++;
     }
     
@@ -81,17 +85,16 @@ namespace ns3 {
       return count;
     }
 
-    bool Exclusion::Contains (std::string digest) const
+    bool Exclusion::Contains (char* hash) const
     {
-      if (digest.size() != HASH_SIZE)
+      if (hash[0] == 0)
 	{
 	  return false;
 	}
 
-
       for (int i = 0; i < count; i++)
 	{
-	  if (m_hash[i] == digest)
+	  if (memcmp(m_hash[i], hash, HASH_SIZE) == 0)
 	    {
 	      return true;
 	    }

@@ -3,7 +3,7 @@
 #define _NDN_EXCLUSION_H_
 
 #define HASH_SIZE 40    // the hash used is SHA_1 and it is represented in hex
-#define MAX_EXCLUSIONS 10
+#define MAX_EXCLUSIONS 2
 
 
 #include "ns3/simple-ref-count.h"
@@ -28,12 +28,12 @@ namespace ns3 {
       uint32_t Deserialize(Buffer::Iterator start);
 
       std::vector<std::string> GetHashList();
-      void Add(std::string hash);
+      void Add(char* hash);
       int size () const;
-      bool Contains (std::string digest) const;
+      bool Contains (char* hash) const;
 
     /* private: */
-      std::string m_hash[MAX_EXCLUSIONS];
+      char m_hash[MAX_EXCLUSIONS][HASH_SIZE + 1];
       int count;
     };    
   } // namespace ndn
