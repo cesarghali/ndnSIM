@@ -228,11 +228,14 @@ ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet
   memcpy(buffer + offset, &signature, sizeof(uint32_t));
 
   SHA1(buffer, size, hash);
+  free(buffer);
+
   input.reserve(20);
   for (int i = 0; i < 20; i++)
     {
       input.push_back(hash[i]);
     }
+  free(hash);
   len = input.length();
           
   strhash.reserve(2 * len);
@@ -249,7 +252,7 @@ ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet
     }
 
   Ptr< entry > newEntry = Create< entry > (this, header, packet);
-  std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry, strhash);
+  std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry, const_cast<char*>(strhash.c_str()));
 
   if (result.first != super::end ())
     {
