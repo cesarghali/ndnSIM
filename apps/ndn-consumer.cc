@@ -91,6 +91,7 @@ Consumer::Consumer ()
   : m_rand (0, std::numeric_limits<uint32_t>::max ())
   , m_seq (0)
   , m_seqMax (0) // don't request anything
+  , count (0)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
@@ -188,9 +189,16 @@ Consumer::SendPacket ()
     {
       if (m_seqMax != std::numeric_limits<uint32_t>::max ())
         {
-          if (m_seq >= m_seqMax)
+          if (m_seq > m_seqMax)
             {
-              return; // we are totally done
+              if (m_repeat == true)
+                {
+                  m_seq = 0;
+                }
+              else
+                {
+                  return; // we are totally done
+                }
             }
         }
 
@@ -206,6 +214,12 @@ Consumer::SendPacket ()
   interestHeader.SetNonce               (m_rand.GetValue ());
   interestHeader.SetName                (nameWithSequence);
   interestHeader.SetInterestLifetime    (m_interestLifeTime);
+
+  // Add Exclusion
+  for (int i = 0; i < count; i++)
+    {
+      interestHeader.AddExclusion(m_hash[i]);
+    }
 
   // NS_LOG_INFO ("Requesting Interest: \n" << interestHeader);
   NS_LOG_INFO ("> Interest for " << seq);
@@ -241,6 +255,35 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
   NS_LOG_FUNCTION (this << contentObject << payload);
 
   // NS_LOG_INFO ("Received content object: " << boost::cref(*contentObject));
+
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  srand(Simulator::Now().GetNanoSeconds() + tv.tv_usec);
+  double r = (double)rand() / RAND_MAX;
+  if (m_exclusionRate != 0 && r <= m_exclusionRate && count < MAX_EXCLUSIONS)
+    {
+      // Calculate the SHA_1 has of the content object                                                                                                                                                               
+      std::string strhash = contentObject->GetHash();
+      bool found = false;
+      for (int i = 0; i < count; i++)
+        {
+          if (memcmp(m_hash[i], strhash.c_str(), HASH_SIZE) == 0)
+            {
+              found = true;
+            }
+        }
+
+      if (!found)
+        {
+          memset(m_hash[count], 0, HASH_SIZE + 1);
+          memcpy(m_hash[count], strhash.c_str(), HASH_SIZE);
+          count++;
+        }
+    }
+  else
+    {
+      count = 0;
+    }
 
   uint32_t seq = boost::lexical_cast<uint32_t> (contentObject->GetName ().GetComponents ().back ());
   NS_LOG_INFO ("< DATA for " << seq);

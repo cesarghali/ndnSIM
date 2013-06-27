@@ -28,9 +28,12 @@
 #include "ns3/nstime.h"
 #include "ns3/data-rate.h"
 #include "ns3/ndn-rtt-estimator.h"
+#include "ns3/ndn-exclusion.h"
 
 #include <set>
 #include <map>
+#include <stdlib.h>
+#include <sys/time.h>
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/tag.hpp>
@@ -132,6 +135,11 @@ protected:
   EventId         m_sendEvent; ///< @brief EventId of pending "send packet" event
   Time            m_retxTimer; ///< @brief Currently estimated retransmission timer
   EventId         m_retxEvent; ///< @brief Event to check whether or not retransmission should be performed
+
+  double          m_exclusionRate;   ///< @brief exclusion rate of received contents in future interests≈
+  char            m_hash[MAX_EXCLUSIONS][HASH_SIZE + 1];   ///< @brief contains the excluded content digests
+  int             count;
+  bool            m_repeat;  ///< @brief reset the currently requested sequence number when the maximum is reached
 
   Ptr<RttEstimator> m_rtt; ///< @brief RTT estimator
 
