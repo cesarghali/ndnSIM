@@ -64,6 +64,18 @@ ConsumerCbr::GetTypeId (void)
                    MakeIntegerAccessor (&ConsumerCbr::m_seqMax),
                    MakeIntegerChecker<uint32_t> ())
 
+    .AddAttribute ("ExclusionRate",
+                   "The exclusion rate of received contents in future interests",
+                   DoubleValue (0.0),
+                   MakeDoubleAccessor (&ConsumerCbr::m_exclusionRate),
+                   MakeDoubleChecker<double> ())
+
+    .AddAttribute ("Repeat",
+                   "Repeat sending interest when the max sequence is reached",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&ConsumerCbr::m_repeat),
+                   MakeBooleanChecker ())
+
     ;
 
   return tid;
