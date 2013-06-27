@@ -1,4 +1,4 @@
-\/* -*- Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil -*- */
+/* -*- Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil -*- */
 /*
  * Copyright (c) 2011-2013 University of California, Los Angeles
  *
