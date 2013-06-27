@@ -154,6 +154,9 @@ public:
   uint32_t
   GetSignature () const;
 
+  std::string
+  GetHash () const;
+
   //////////////////////////////////////////////////////////////////
 
   static TypeId GetTypeId (void); ///< @brief Get TypeId

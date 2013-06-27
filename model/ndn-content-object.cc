@@ -1,4 +1,4 @@
-/* -*- Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil -*- */
+\/* -*- Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil -*- */
 /*
  * Copyright (c) 2011-2013 University of California, Los Angeles
  *
@@ -24,6 +24,8 @@
 #include "ns3/log.h"
 
 #include <boost/foreach.hpp>
+
+#include <openssl/sha.h>
 
 NS_LOG_COMPONENT_DEFINE ("ndn.ContentObject");
 
@@ -109,6 +111,65 @@ uint32_t
 ContentObject::GetSignature () const
 {
   return m_signature;
+}
+
+std::string
+ContentObject::GetHash () const
+{
+  // Calculate the SHA_1 has of the packet payload               
+  std::string strhash;
+  std::stringstream s;
+  unsigned char* hash = ((unsigned char*)(malloc(20)));
+  memset(hash, 0, 20);
+
+  static const char* const lut = "0123456789ABCDEF";
+  std::string input;
+  int len;
+  unsigned char c;
+
+  std::ostringstream convert;
+  convert << GetName();
+  std::string name = convert.str();
+  int size = name.size() + 12;     // 12 = 4 + 4 + 4 for timestamp, freshness, and signature
+  uint8_t* buffer = ((uint8_t*)(malloc(size)));
+  memset(buffer, 0, size);
+      
+  int offset = 0;
+  memcpy(buffer, name.c_str(), name.size());
+  offset += name.size();
+      
+  uint32_t timestamp = GetTimestamp().ToInteger(Time::S);
+  memcpy(buffer + offset, &timestamp, sizeof(uint32_t));
+  offset += sizeof(uint32_t);
+      
+  uint32_t freshness = GetFreshness().ToInteger(Time::S);
+  memcpy(buffer + offset, &freshness, sizeof(uint32_t));
+  offset += sizeof(uint32_t);
+      
+  uint32_t signature = GetSignature();
+  memcpy(buffer + offset, &signature, sizeof(uint32_t));
+
+  SHA1(buffer, size, hash);
+  free(buffer);
+
+  input.reserve(20);
+  for (int i = 0; i < 20; i++)
+    {
+      input.push_back(hash[i]);
+    }
+  free(hash);
+  len = input.length();
+      
+  strhash.reserve(2 * len);
+  offset = 0;
+  for (int i = 0; i < len; ++i)
+    {
+      c = input[i];
+      strhash.push_back(lut[c >> 4]);
+      strhash.push_back(lut[c & 15]);
+    }
+
+  return strhash;
 }
 
 uint32_t
