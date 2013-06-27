@@ -214,9 +214,16 @@ public:
   {
     // Full key is the whole content name, subkey is splitted based on '/'
 
+    FullKey modified_key(key.GetComponents());
+
+    if (hash != NULL)
+      {
+        modified_key.Add(hash);
+      }
+
     trie *trieNode = this;
 
-    BOOST_FOREACH (const Key &subkey, key)
+    BOOST_FOREACH (const Key &subkey, modified_key)
       {
         trie *newNode = new trie (subkey, initialBucketSize_, bucketIncrement_, hash);
         // std::cout << "new " << newNode << "\n";
