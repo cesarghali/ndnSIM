@@ -193,7 +193,7 @@ ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet
   NS_LOG_FUNCTION (this << header->GetName ());
 
   // Calculate the SHA_1 has of the content object
-  std::string strhash = header->GetHash ();;
+  std::string strhash = header->GetHash ();
 
   Ptr< entry > newEntry = Create< entry > (this, header, packet);
   std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry, const_cast<char*>(strhash.c_str()));
