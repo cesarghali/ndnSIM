@@ -37,7 +37,6 @@
 #include <boost/lambda/lambda.hpp>
 #include <boost/lambda/bind.hpp>
 
-#include <time.h>
 #include <sys/time.h>
 namespace ll = boost::lambda;
 
