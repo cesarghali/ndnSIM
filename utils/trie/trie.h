@@ -32,7 +32,7 @@
 #include <boost/foreach.hpp>
 #include <boost/mpl/if.hpp>
 
-#include "../../model/ndn-exclusion.h"
+#include "ns3/ndn-exclusion.h"
 
 namespace ns3 {
 namespace ndn {
@@ -153,7 +153,7 @@ public:
   typedef PayloadTraits payload_traits;
 
   inline
-  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10, char* hash = NULL)
+  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10, char* hash = NULL, double timeout = -1)
     : key_ (key)
     , initialBucketSize_ (bucketSize)
     , bucketIncrement_ (bucketIncrement)
@@ -162,6 +162,8 @@ public:
     , children_ (bucket_traits (buckets_.get (), bucketSize_))
     , payload_ (PayloadTraits::empty_payload)
     , parent_ (0)
+    , num_of_exclusions_ (0)
+    , timeout_ (timeout)
   {
     memset(hash_, 0, HASH_SIZE + 1);
     if (hash != NULL)
@@ -210,7 +212,7 @@ public:
 
   inline std::pair<iterator, bool>
   insert (const FullKey &key,
-          typename PayloadTraits::insert_type payload, char* hash = NULL)
+          typename PayloadTraits::insert_type payload, char* hash = NULL, double timeout = -1)
   {
     // Full key is the whole content name, subkey is splitted based on '/'
 
@@ -225,7 +227,7 @@ public:
 
     BOOST_FOREACH (const Key &subkey, modified_key)
       {
-        trie *newNode = new trie (subkey, initialBucketSize_, bucketIncrement_, hash);
+        trie *newNode = new trie (subkey, initialBucketSize_, bucketIncrement_, hash, timeout_);
         // std::cout << "new " << newNode << "\n";
         newNode->parent_ = trieNode;
         
@@ -312,7 +314,7 @@ public:
    * @return ->second is true if prefix in ->first is longer than key
    */
   inline boost::tuple<iterator, bool, iterator>
-  find (const FullKey &key, ns3::Ptr<const Exclusion> exclusionFilter = NULL)
+  find (const FullKey &key, ns3::Ptr<const Exclusion> exclusionFilter = NULL, int count = -1)
   {
     trie *trieNode = this;
     iterator foundNode = (payload_ != PayloadTraits::empty_payload) ? this : 0;
@@ -328,6 +330,7 @@ public:
               {
                 if (exclusionFilter->Contains(range.first->hash_) == true)
                   {
+                    range.first->num_of_exclusions_++;
                     *range.first++;
                   }
                 else
@@ -367,7 +370,7 @@ public:
    */
   template<class Predicate>
   inline boost::tuple<iterator, bool, iterator>
-  find_if (const FullKey &key, Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL)
+  find_if (const FullKey &key, Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL, int count = -1)
   {
     trie *trieNode = this;
     iterator foundNode = (payload_ != PayloadTraits::empty_payload) ? this : 0;
@@ -448,7 +451,7 @@ public:
    */
   template<class Predicate>
   inline const iterator
-  find_if (Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL)
+  find_if (Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL, int count = -1)
   {
     if (payload_ != PayloadTraits::empty_payload && pred (payload_) &&
         exclusionFilter != NULL && !exclusionFilter->Contains(hash_))
@@ -567,6 +570,8 @@ private:
   trie *parent_; // to make cleaning effective
 
   char hash_[HASH_SIZE + 1];
+  int num_of_exclusions_;
+  double timeout_;
 };
 
 
