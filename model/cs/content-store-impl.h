@@ -32,7 +32,6 @@
 #include "ns3/uinteger.h"
 #include "ns3/string.h"
 #include "ns3/double.h"
-#include <ns3/nstime.h>
 
 #include "../../utils/trie/trie-with-policy.h"
 
