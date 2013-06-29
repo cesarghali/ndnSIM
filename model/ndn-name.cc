@@ -177,6 +177,18 @@ Name::Print (std::ostream &os) const
   if (m_prefix.size ()==0) os << "/";
 }
 
+std::string
+Name::ToString ()
+{
+  std::string ret_value;
+  for (const_iterator i=m_prefix.begin(); i!=m_prefix.end(); i++)
+    {
+      ret_value.append("/");
+      ret_value.append(*i);
+    }
+  return ret_value;
+}
+
 std::ostream &
 operator << (std::ostream &os, const Name &components)
 {

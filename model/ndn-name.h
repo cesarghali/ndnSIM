@@ -136,6 +136,12 @@ public:
   void Print (std::ostream &os) const;
 
   /**
+   * \brief Return the name in string representation
+   */ 
+  std::string
+  ToString ();
+
+  /**
    * @brief Get serialized size for ndnSIM packet encoding
    */
   size_t
