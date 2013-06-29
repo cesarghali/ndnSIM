@@ -54,10 +54,10 @@ public:
   }
 
   inline std::pair< iterator, bool >
-  insert (const FullKey &key, typename PayloadTraits::insert_type payload, char* hash = NULL)
+  insert (const FullKey &key, typename PayloadTraits::insert_type payload, char* hash = NULL, double timeout = -1)
   {
     std::pair<iterator, bool> item =
-      trie_.insert (key, payload, hash);
+      trie_.insert (key, payload, hash, timeout);
 
     if (item.second) // real insert
       {
@@ -137,11 +137,11 @@ public:
    * @brief Find a node that has the longest common prefix with key (FIB/PIT lookup)
    */
   inline iterator
-  longest_prefix_match (const FullKey &key, ns3::Ptr<const Exclusion> exclusionFilter = NULL)
+  longest_prefix_match (const FullKey &key, ns3::Ptr<const Exclusion> exclusionFilter = NULL, int count = -1)
   {
     iterator foundItem, lastItem;
     bool reachLast;
-    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key, exclusionFilter);
+    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key, exclusionFilter, count);
     if (foundItem != trie_.end ())
       {
         policy_.lookup (s_iterator_to (foundItem));
@@ -154,11 +154,11 @@ public:
    */
   template<class Predicate>
   inline iterator
-  longest_prefix_match_if (const FullKey &key, Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL)
+  longest_prefix_match_if (const FullKey &key, Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL, int count = -1)
   {
     iterator foundItem, lastItem;
     bool reachLast;
-    boost::tie (foundItem, reachLast, lastItem) = trie_.find_if (key, pred, exclusionFilter);
+    boost::tie (foundItem, reachLast, lastItem) = trie_.find_if (key, pred, exclusionFilter, count);
     if (foundItem != trie_.end ())
       {
         policy_.lookup (s_iterator_to (foundItem));
@@ -180,11 +180,11 @@ public:
    * @brief Find a node that has prefix at least as the key (cache lookup)
    */
   inline iterator
-  deepest_prefix_match (const FullKey &key, ns3::Ptr<const Exclusion> exclusionFilter = NULL)
+  deepest_prefix_match (const FullKey &key, ns3::Ptr<const Exclusion> exclusionFilter = NULL, int count = -1)
   {
     iterator foundItem, lastItem;
     bool reachLast;
-    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key, exclusionFilter);
+    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key, exclusionFilter, count);
 
     // guard in case we don't have anything in the trie
     if (lastItem == trie_.end ())
@@ -210,11 +210,11 @@ public:
    */
   template<class Predicate>
   inline iterator
-  deepest_prefix_match (const FullKey &key, Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL)
+  deepest_prefix_match (const FullKey &key, Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL, int count = -1)
   {
     iterator foundItem, lastItem;
     bool reachLast;
-    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key, exclusionFilter);
+    boost::tie (foundItem, reachLast, lastItem) = trie_.find (key, exclusionFilter, count);
 
     // guard in case we don't have anything in the trie
     if (lastItem == trie_.end ())
