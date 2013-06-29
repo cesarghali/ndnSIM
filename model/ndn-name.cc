@@ -178,7 +178,7 @@ Name::Print (std::ostream &os) const
 }
 
 std::string
-Name::ToString ()
+Name::ToString () const
 {
   std::string ret_value;
   for (const_iterator i=m_prefix.begin(); i!=m_prefix.end(); i++)

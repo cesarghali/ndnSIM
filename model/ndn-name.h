@@ -139,7 +139,7 @@ public:
    * \brief Return the name in string representation
    */ 
   std::string
-  ToString ();
+  ToString () const;
 
   /**
    * @brief Get serialized size for ndnSIM packet encoding
