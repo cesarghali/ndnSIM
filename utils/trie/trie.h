@@ -22,6 +22,7 @@
 #define TRIE_H_
 
 #include "ns3/ptr.h"
+#include "ns3/ndn-exclusion.h"
 
 #include <boost/intrusive/unordered_set.hpp>
 #include <boost/intrusive/list.hpp>
@@ -32,7 +33,8 @@
 #include <boost/foreach.hpp>
 #include <boost/mpl/if.hpp>
 
-#include "ns3/ndn-exclusion.h"
+#include <math.h>
+
 
 namespace ns3 {
 namespace ndn {
@@ -153,7 +155,7 @@ public:
   typedef PayloadTraits payload_traits;
 
   inline
-  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10, char* hash = NULL, double timeout = -1)
+  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10, char* hash = NULL, double timeout = -1, double rateAtTimeout = -1)
     : key_ (key)
     , initialBucketSize_ (bucketSize)
     , bucketIncrement_ (bucketIncrement)
@@ -169,6 +171,15 @@ public:
     if (hash != NULL)
       {
         memcpy(hash_, hash, HASH_SIZE);
+      }
+    
+    if (rateAtTimeout != -1 && timeout != -1)
+      {
+        alpha_to = (timeout) / (-1 * log(rateAtTimeout));
+      }
+    else
+      {
+        alpha_to = 0.01;
       }
   }
 
@@ -212,7 +223,7 @@ public:
 
   inline std::pair<iterator, bool>
   insert (const FullKey &key,
-          typename PayloadTraits::insert_type payload, char* hash = NULL, double timeout = -1)
+          typename PayloadTraits::insert_type payload, char* hash = NULL, double timeout = -1, double rateAtTimeout = -1)
   {
     // Full key is the whole content name, subkey is splitted based on '/'
 
@@ -227,7 +238,7 @@ public:
 
     BOOST_FOREACH (const Key &subkey, modified_key)
       {
-        trie *newNode = new trie (subkey, initialBucketSize_, bucketIncrement_, hash, timeout_);
+        trie *newNode = new trie (subkey, initialBucketSize_, bucketIncrement_, hash, timeout, rateAtTimeout);
         // std::cout << "new " << newNode << "\n";
         newNode->parent_ = trieNode;
         
@@ -572,6 +583,7 @@ private:
   char hash_[HASH_SIZE + 1];
   int num_of_exclusions_;
   double timeout_;
+  double alpha_to;
 };
 
 

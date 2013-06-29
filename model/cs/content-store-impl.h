@@ -31,6 +31,8 @@
 #include "ns3/log.h"
 #include "ns3/uinteger.h"
 #include "ns3/string.h"
+#include "ns3/double.h"
+#include <ns3/nstime.h>
 
 #include "../../utils/trie/trie-with-policy.h"
 
@@ -119,9 +121,16 @@ private:
   uint32_t
   GetMaxSize () const;
 
+  void
+  SetRateAtTimeout (double rateAtTimeout);
+
+  double
+  GetRateAtTimeout () const;
+
 private:
   static LogComponent g_log; ///< @brief Logging variable
   boost::unordered_map<std::string, int> name_count;
+  double rate_at_timeout;
 
   /// @brief trace of for entry additions (fired every time entry is successfully added to the cache): first parameter is pointer to the CS entry
   TracedCallback< Ptr<const Entry> > m_didAddEntry;
@@ -150,6 +159,12 @@ ContentStoreImpl< Policy >::GetTypeId ()
                    MakeUintegerAccessor (&ContentStoreImpl< Policy >::GetMaxSize,
                                          &ContentStoreImpl< Policy >::SetMaxSize),
                    MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("RateAtTimeout",
+                   "Set the cache entry rate at timeout",
+                   DoubleValue (0.01),
+                   MakeDoubleAccessor (&ContentStoreImpl< Policy >::GetRateAtTimeout,
+                                       &ContentStoreImpl< Policy >::SetRateAtTimeout),
+                   MakeDoubleChecker<double> ())
 
     .AddTraceSource ("DidAddEntry", "Trace fired every time entry is successfully added to the cache",
                      MakeTraceSourceAccessor (&ContentStoreImpl< Policy >::m_didAddEntry))
@@ -206,7 +221,8 @@ ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet
   std::string strhash = header->GetHash ();
 
   Ptr< entry > newEntry = Create< entry > (this, header, packet);
-  std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry, const_cast<char*>(strhash.c_str()), header->GetFreshness ().GetSeconds ());
+  std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry, const_cast<char*>(strhash.c_str()), header->GetFreshness ().GetSeconds (),
+                                                                      rate_at_timeout);
 
   if (result.first != super::end ())
     {
@@ -252,6 +268,20 @@ uint32_t
 ContentStoreImpl<Policy>::GetMaxSize () const
 {
   return this->getPolicy ().get_max_size ();
+}
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::SetRateAtTimeout (double rateAtTimeout)
+{
+  this->rate_at_timeout = rateAtTimeout;
+}
+
+template<class Policy>
+double
+ContentStoreImpl<Policy>::GetRateAtTimeout () const
+{
+  return this->rate_at_timeout;
 }
 
 template<class Policy>
