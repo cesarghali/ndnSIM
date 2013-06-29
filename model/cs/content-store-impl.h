@@ -26,13 +26,13 @@
 #include "ns3/ndn-interest.h"
 #include "ns3/ndn-content-object.h"
 #include <boost/foreach.hpp>
+#include <boost/unordered_map.hpp>
 
 #include "ns3/log.h"
 #include "ns3/uinteger.h"
 #include "ns3/string.h"
 
 #include "../../utils/trie/trie-with-policy.h"
-#include <openssl/sha.h>
 
 
 namespace ns3 {
@@ -121,6 +121,7 @@ private:
 
 private:
   static LogComponent g_log; ///< @brief Logging variable
+  boost::unordered_map<std::string, int> name_count;
 
   /// @brief trace of for entry additions (fired every time entry is successfully added to the cache): first parameter is pointer to the CS entry
   TracedCallback< Ptr<const Entry> > m_didAddEntry;
@@ -166,8 +167,17 @@ ContentStoreImpl<Policy>::Lookup (Ptr<const Interest> interest)
   // Read the exclusion filter if exists in the interest
   ns3::Ptr<const Exclusion> exclusionFilter = interest->GetExclusionPtr ();
 
+  // Process statistics about this content name
+  int count = 1;
+  std::pair<boost::unordered_map<std::string, int>::iterator, bool> pair = name_count.insert(std::make_pair (interest->GetName ().ToString (), count));
+  if (pair.second == false)
+    {
+      pair.first->second++;
+      count = pair.first->second;
+    }
+
   /// @todo Change to search with predicate
-  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName (), exclusionFilter);
+  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName (), exclusionFilter, count);
 
   if (node != this->end ())
     {
@@ -196,7 +206,7 @@ ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet
   std::string strhash = header->GetHash ();
 
   Ptr< entry > newEntry = Create< entry > (this, header, packet);
-  std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry, const_cast<char*>(strhash.c_str()));
+  std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry, const_cast<char*>(strhash.c_str()), header->GetFreshness ().GetSeconds ());
 
   if (result.first != super::end ())
     {
