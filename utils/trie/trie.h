@@ -23,6 +23,7 @@
 
 #include "ns3/ptr.h"
 #include "ns3/ndn-exclusion.h"
+#include "ns3/nstime.h"
 
 #include <boost/intrusive/unordered_set.hpp>
 #include <boost/intrusive/list.hpp>
@@ -166,6 +167,7 @@ public:
     , parent_ (0)
     , num_of_exclusions_ (0)
     , timeout_ (timeout)
+    , life_time_ (0)
   {
     memset(hash_, 0, HASH_SIZE + 1);
     if (hash != NULL)
@@ -333,29 +335,7 @@ public:
 
     BOOST_FOREACH (const Key &subkey, key)
       {
-        typename unordered_set::iterator item = trieNode->children_.end();
-        std::pair<typename unordered_set::iterator, typename unordered_set::iterator> range = trieNode ->children_.equal_range(subkey);
-        if (exclusionFilter != NULL)
-          {
-            while (range.first != range.second)
-              {
-                if (exclusionFilter->Contains(range.first->hash_) == true)
-                  {
-                    range.first->num_of_exclusions_++;
-                    *range.first++;
-                  }
-                else
-                  {
-                    item = range.first;
-                    break;
-                  }
-              }
-          }
-        else
-          {
-            item = range.first;
-          }
-        
+        typename unordered_set::iterator item = trieNode->children_.find (subkey);        
         if (item == trieNode->children_.end ())
           {
             reachLast = false;
@@ -367,6 +347,29 @@ public:
 
             if (trieNode->payload_ != PayloadTraits::empty_payload)
               foundNode = trieNode;
+          }
+      }
+
+    if (reachLast)
+      {
+        reachLast = false;
+        if (exclusionFilter != NULL)
+          {
+            for (typename unordered_set::iterator it = trieNode->children_.begin();
+                 it != trieNode->children_.end();
+                 it++)
+              {
+                if (exclusionFilter->Contains(it->hash_) == true)
+                  {
+                    it->num_of_exclusions_++;
+                  }
+                else
+                  {
+                    reachLast = true;
+                    foundNode = &(*it);
+                    break;
+                  }
+              }
           }
       }
 
@@ -389,28 +392,7 @@ public:
 
     BOOST_FOREACH (const Key &subkey, key)
       {
-        typename unordered_set::iterator item = trieNode->children_.end();
-        std::pair<typename unordered_set::iterator, typename unordered_set::iterator> range = trieNode ->children_.equal_range(subkey);
-        if (exclusionFilter != NULL)
-          {
-            while (range.first != range.second)
-              {
-                if (exclusionFilter->Contains(range.first->hash_) == true)
-                  {
-                    *range.first++;
-                  }
-                else
-                  {
-                    item = range.first;
-                    break;
-                  }
-              }
-          }
-        else
-          {
-            item = range.first;
-          }
-
+        typename unordered_set::iterator item = trieNode->children_.find (subkey);
         if (item == trieNode->children_.end ())
           {
             reachLast = false;
@@ -424,6 +406,29 @@ public:
                 pred (trieNode->payload_))
               {
                 foundNode = trieNode;
+              }
+          }
+      }
+
+    if (reachLast)
+      {
+        reachLast = false;
+        if (exclusionFilter != NULL)
+          {
+            for (typename unordered_set::iterator it = trieNode->children_.begin();
+                 it != trieNode->children_.end();
+                 it++)
+              {
+                if (exclusionFilter->Contains(it->hash_) == true)
+                  {
+                    it->num_of_exclusions_++;
+                  }
+                else
+                  {
+                    reachLast = true;
+                    foundNode = &(*it);
+                    break;
+                  }
               }
           }
       }
@@ -584,6 +589,7 @@ private:
   int num_of_exclusions_;
   double timeout_;
   double alpha_to;
+  Time life_time_;
 };
 
 
