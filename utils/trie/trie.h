@@ -24,6 +24,7 @@
 #include "ns3/ptr.h"
 #include "ns3/ndn-exclusion.h"
 #include "ns3/nstime.h"
+#include "ns3/simulator.h"
 
 #include <boost/intrusive/unordered_set.hpp>
 #include <boost/intrusive/list.hpp>
@@ -167,7 +168,7 @@ public:
     , parent_ (0)
     , num_of_exclusions_ (0)
     , timeout_ (timeout)
-    , life_time_ (0)
+    , time_added_ (Simulator::Now())
   {
     memset(hash_, 0, HASH_SIZE + 1);
     if (hash != NULL)
@@ -355,6 +356,7 @@ public:
         reachLast = false;
         if (exclusionFilter != NULL)
           {
+            double max_rank = -1;
             for (typename unordered_set::iterator it = trieNode->children_.begin();
                  it != trieNode->children_.end();
                  it++)
@@ -366,8 +368,23 @@ public:
                 else
                   {
                     reachLast = true;
-                    foundNode = &(*it);
-                    break;
+
+                    if (count == -1)
+                      {
+                        foundNode = &(*it);
+                        break;
+                      }
+                    else
+                      {
+                        double lifeTime = (Simulator::Now() - it->time_added_).GetSeconds();
+                        double rate = it->num_of_exclusions_ / (double)count;
+                        double rank = exp((-1 * lifeTime) / (it->alpha_to - (rate * it->alpha_to)));
+                        if (rank > max_rank)
+                          {
+                            max_rank = rank;
+                            foundNode = &(*it);
+                          }
+                      }
                   }
               }
           }
@@ -589,7 +606,7 @@ private:
   int num_of_exclusions_;
   double timeout_;
   double alpha_to;
-  Time life_time_;
+  Time time_added_;
 };
 
 
