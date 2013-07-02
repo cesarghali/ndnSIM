@@ -54,10 +54,10 @@ public:
   }
 
   inline std::pair< iterator, bool >
-  insert (const FullKey &key, typename PayloadTraits::insert_type payload, char* hash = NULL, double timeout = -1, double rateAtTimeout = -1)
+  insert (const FullKey &key, typename PayloadTraits::insert_type payload, char* hash = NULL, double timeout = -1, double rateAtTimeout = -1, double exclusionDiscardedTimeout = -1)
   {
     std::pair<iterator, bool> item =
-      trie_.insert (key, payload, hash, timeout, rateAtTimeout);
+      trie_.insert (key, payload, hash, timeout, rateAtTimeout, exclusionDiscardedTimeout);
 
     if (item.second) // real insert
       {

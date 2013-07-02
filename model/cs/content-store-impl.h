@@ -126,10 +126,17 @@ private:
   double
   GetRateAtTimeout () const;
 
+  void
+  SetExclusionDiscardedTimeout (double exclusionDiscardedTimeout);
+
+  double
+  GetExclusionDiscardedTimeout () const;
+
 private:
   static LogComponent g_log; ///< @brief Logging variable
   boost::unordered_map<std::string, int> name_count;
   double rate_at_timeout;
+  double exclusion_discarded_timeout;
 
   /// @brief trace of for entry additions (fired every time entry is successfully added to the cache): first parameter is pointer to the CS entry
   TracedCallback< Ptr<const Entry> > m_didAddEntry;
@@ -163,6 +170,12 @@ ContentStoreImpl< Policy >::GetTypeId ()
                    DoubleValue (0.01),
                    MakeDoubleAccessor (&ContentStoreImpl< Policy >::GetRateAtTimeout,
                                        &ContentStoreImpl< Policy >::SetRateAtTimeout),
+                   MakeDoubleChecker<double> ())
+    .AddAttribute ("ExclusionDiscardedTimeout",
+                   "Set the time in seconds when the last exclusion will be fully discarded",
+                   DoubleValue (0),
+                   MakeDoubleAccessor (&ContentStoreImpl< Policy >::GetExclusionDiscardedTimeout,
+                                       &ContentStoreImpl< Policy >::SetExclusionDiscardedTimeout),
                    MakeDoubleChecker<double> ())
 
     .AddTraceSource ("DidAddEntry", "Trace fired every time entry is successfully added to the cache",
@@ -221,7 +234,7 @@ ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet
 
   Ptr< entry > newEntry = Create< entry > (this, header, packet);
   std::pair< typename super::iterator, bool > result = super::insert (header->GetName (), newEntry, const_cast<char*>(strhash.c_str()), header->GetFreshness ().GetSeconds (),
-                                                                      rate_at_timeout);
+                                                                      rate_at_timeout, exclusion_discarded_timeout);
 
   if (result.first != super::end ())
     {
@@ -273,6 +286,8 @@ template<class Policy>
 void
 ContentStoreImpl<Policy>::SetRateAtTimeout (double rateAtTimeout)
 {
+  NS_ASSERT_MSG (rateAtTimeout >= 0.01 && rateAtTimeout <= 1, "Rate at timeout should be at least 0.01 and at most 1");
+
   this->rate_at_timeout = rateAtTimeout;
 }
 
@@ -281,6 +296,22 @@ double
 ContentStoreImpl<Policy>::GetRateAtTimeout () const
 {
   return this->rate_at_timeout;
+}
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::SetExclusionDiscardedTimeout (double exclusionDiscardedTimeout)
+{
+  NS_ASSERT_MSG (exclusionDiscardedTimeout >= 0, "Exclusion discarded timeout cannot be negative");
+
+  this->exclusion_discarded_timeout = exclusionDiscardedTimeout;
+}
+
+template<class Policy>
+double
+ContentStoreImpl<Policy>::GetExclusionDiscardedTimeout () const
+{
+  return this->exclusion_discarded_timeout;
 }
 
 template<class Policy>

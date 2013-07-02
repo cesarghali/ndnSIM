@@ -157,7 +157,7 @@ public:
   typedef PayloadTraits payload_traits;
 
   inline
-  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10, char* hash = NULL, double timeout = -1, double rateAtTimeout = -1)
+  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10, char* hash = NULL, double timeout = -1, double rateAtTimeout = -1, double exclusionDiscardedTimeout = -1)
     : key_ (key)
     , initialBucketSize_ (bucketSize)
     , bucketIncrement_ (bucketIncrement)
@@ -183,6 +183,15 @@ public:
     else
       {
         alpha_to = 0.01;
+      }
+
+    if (exclusionDiscardedTimeout != -1)
+      {
+        beta = (exclusionDiscardedTimeout) / (-1 * log(0.01));
+      }
+    else
+      {
+        beta = 0.01;
       }
   }
 
@@ -226,7 +235,7 @@ public:
 
   inline std::pair<iterator, bool>
   insert (const FullKey &key,
-          typename PayloadTraits::insert_type payload, char* hash = NULL, double timeout = -1, double rateAtTimeout = -1)
+          typename PayloadTraits::insert_type payload, char* hash = NULL, double timeout = -1, double rateAtTimeout = -1, double exclusionDiscardedTimeout = -1)
   {
     // Full key is the whole content name, subkey is splitted based on '/'
 
@@ -241,7 +250,7 @@ public:
 
     BOOST_FOREACH (const Key &subkey, modified_key)
       {
-        trie *newNode = new trie (subkey, initialBucketSize_, bucketIncrement_, hash, timeout, rateAtTimeout);
+        trie *newNode = new trie (subkey, initialBucketSize_, bucketIncrement_, hash, timeout, rateAtTimeout, exclusionDiscardedTimeout);
         // std::cout << "new " << newNode << "\n";
         newNode->parent_ = trieNode;
         
@@ -364,6 +373,7 @@ public:
                 if (exclusionFilter->Contains(it->hash_) == true)
                   {
                     it->num_of_exclusions_++;
+                    it->last_excluded_ = Simulator::Now();
                   }
                 else
                   {
@@ -378,7 +388,19 @@ public:
                       {
                         double lifeTime = (Simulator::Now() - it->time_added_).GetSeconds();
                         double rate = it->num_of_exclusions_ / (double)count;
-                        double rank = exp((-1 * lifeTime) / (it->alpha_to - (rate * it->alpha_to)));
+
+                        double discardFactor;
+                        if (it->num_of_exclusions_ == 0)
+                          {
+                            discardFactor = 1;
+                          }
+                        else
+                          {
+                            double timeSinceLastExcluded = (Simulator::Now() - it->last_excluded_).GetSeconds();
+                            discardFactor = 1 - exp(timeSinceLastExcluded / it->beta);
+                          }
+
+                        double rank = exp((-1 * lifeTime) / (discardFactor * (it->alpha_to - (rate * it->alpha_to))));
                         if (rank > max_rank)
                           {
                             max_rank = rank;
@@ -432,6 +454,7 @@ public:
         reachLast = false;
         if (exclusionFilter != NULL)
           {
+            double max_rank = -1;
             for (typename unordered_set::iterator it = trieNode->children_.begin();
                  it != trieNode->children_.end();
                  it++)
@@ -439,12 +462,40 @@ public:
                 if (exclusionFilter->Contains(it->hash_) == true)
                   {
                     it->num_of_exclusions_++;
+                    it->last_excluded_ = Simulator::Now();
                   }
                 else
                   {
                     reachLast = true;
-                    foundNode = &(*it);
-                    break;
+
+                    if (count == -1)
+                      {
+                        foundNode = &(*it);
+                        break;
+                      }
+                    else
+                      {
+                        double lifeTime = (Simulator::Now() - it->time_added_).GetSeconds();
+                        double rate = it->num_of_exclusions_ / (double)count;
+
+                        double discardFactor;
+                        if (it->num_of_exclusions_ == 0)
+                          {
+                            discardFactor = 1;
+                          }
+                        else
+                          {
+                            double timeSinceLastExcluded = (Simulator::Now() - it->last_excluded_).GetSeconds();
+                            discardFactor = 1 - exp(timeSinceLastExcluded / it->beta);
+                          }
+
+                        double rank = exp((-1 * lifeTime) / (discardFactor * (it->alpha_to - (rate * it->alpha_to))));
+                        if (rank > max_rank)
+                          {
+                            max_rank = rank;
+                            foundNode = &(*it);
+                          }
+                      }
                   }
               }
           }
@@ -607,6 +658,8 @@ private:
   double timeout_;
   double alpha_to;
   Time time_added_;
+  Time last_excluded_;
+  double beta;
 };
 
 
