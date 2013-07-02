@@ -157,7 +157,7 @@ public:
   typedef PayloadTraits payload_traits;
 
   inline
-  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10, char* hash = NULL, double timeout = -1, double rateAtTimeout = -1, double exclusionDiscardedTimeout = -1)
+  trie (const Key &key, size_t bucketSize = 10, size_t bucketIncrement = 10, char* hash = NULL, double timeout = -1, double rateAtTimeout = -1, double exclusionDiscardedTimeout = -2)
     : key_ (key)
     , initialBucketSize_ (bucketSize)
     , bucketIncrement_ (bucketIncrement)
@@ -188,6 +188,10 @@ public:
     if (exclusionDiscardedTimeout > 0)
       {
         beta = (exclusionDiscardedTimeout) / (-1 * log(0.01));
+      }
+    else if (exclusionDiscardedTimeout == -1)
+      {
+        beta = -1;
       }
     else
       {
@@ -337,7 +341,7 @@ public:
    * @return ->second is true if prefix in ->first is longer than key
    */
   inline boost::tuple<iterator, bool, iterator>
-  find (const FullKey &key, ns3::Ptr<const Exclusion> exclusionFilter = NULL, int count = -1)
+  find (const FullKey &key, ns3::Ptr<const Exclusion> exclusionFilter = NULL, bool disableRanking = true, int count = -1)
   {
     trie *trieNode = this;
     iterator foundNode = (payload_ != PayloadTraits::empty_payload) ? this : 0;
@@ -379,7 +383,7 @@ public:
                   {
                     reachLast = true;
 
-                    if (count == -1)
+                    if (count == -1 && disableRanking == true)
                       {
                         foundNode = &(*it);
                         break;
@@ -390,7 +394,7 @@ public:
                         double rate = it->num_of_exclusions_ / (double)count;
 
                         double discardFactor;
-                        if (it->num_of_exclusions_ == 0)
+                        if (it->num_of_exclusions_ == 0 || it->beta == -1)
                           {
                             discardFactor = 1;
                           }
@@ -423,7 +427,7 @@ public:
    */
   template<class Predicate>
   inline boost::tuple<iterator, bool, iterator>
-  find_if (const FullKey &key, Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL, int count = -1)
+  find_if (const FullKey &key, Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL, bool disableRanking = true, int count = -1)
   {
     trie *trieNode = this;
     iterator foundNode = (payload_ != PayloadTraits::empty_payload) ? this : 0;
@@ -468,7 +472,7 @@ public:
                   {
                     reachLast = true;
 
-                    if (count == -1)
+                    if (count == -1 && disableRanking == true)
                       {
                         foundNode = &(*it);
                         break;
@@ -479,7 +483,7 @@ public:
                         double rate = it->num_of_exclusions_ / (double)count;
 
                         double discardFactor;
-                        if (it->num_of_exclusions_ == 0)
+                        if (it->num_of_exclusions_ == 0 || it->beta == -1)
                           {
                             discardFactor = 1;
                           }

@@ -32,6 +32,7 @@
 #include "ns3/uinteger.h"
 #include "ns3/string.h"
 #include "ns3/double.h"
+#include "ns3/boolean.h"
 
 #include "../../utils/trie/trie-with-policy.h"
 
@@ -121,6 +122,12 @@ private:
   GetMaxSize () const;
 
   void
+  SetDisableRanking (bool disableRanking);
+
+  bool
+  GetDisableRanking () const;
+
+  void
   SetRateAtTimeout (double rateAtTimeout);
 
   double
@@ -135,6 +142,7 @@ private:
 private:
   static LogComponent g_log; ///< @brief Logging variable
   boost::unordered_map<std::string, int> name_count;
+  bool disable_ranking;
   double rate_at_timeout;
   double exclusion_discarded_timeout;
 
@@ -173,10 +181,16 @@ ContentStoreImpl< Policy >::GetTypeId ()
                    MakeDoubleChecker<double> ())
     .AddAttribute ("ExclusionDiscardedTimeout",
                    "Set the time in seconds when the last exclusion will be fully discarded",
-                   DoubleValue (0),
+                   DoubleValue (-1),
                    MakeDoubleAccessor (&ContentStoreImpl< Policy >::GetExclusionDiscardedTimeout,
                                        &ContentStoreImpl< Policy >::SetExclusionDiscardedTimeout),
                    MakeDoubleChecker<double> ())
+    .AddAttribute ("DisableRanking",
+                   "If set, the first content that matches the name in CS and is not excluded will be served. No content ranking will be applied.",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&ContentStoreImpl< Policy >::GetDisableRanking,
+                                       &ContentStoreImpl< Policy >::SetDisableRanking),
+                   MakeBooleanChecker ())
 
     .AddTraceSource ("DidAddEntry", "Trace fired every time entry is successfully added to the cache",
                      MakeTraceSourceAccessor (&ContentStoreImpl< Policy >::m_didAddEntry))
@@ -204,7 +218,7 @@ ContentStoreImpl<Policy>::Lookup (Ptr<const Interest> interest)
     }
 
   /// @todo Change to search with predicate
-  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName (), exclusionFilter, count);
+  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName (), exclusionFilter, disable_ranking, count);
 
   if (node != this->end ())
     {
@@ -284,6 +298,20 @@ ContentStoreImpl<Policy>::GetMaxSize () const
 
 template<class Policy>
 void
+ContentStoreImpl<Policy>::SetDisableRanking (bool disableRanking)
+{
+  this->disable_ranking = disableRanking;
+}
+
+template<class Policy>
+bool
+ContentStoreImpl<Policy>::GetDisableRanking () const
+{
+  return this->disable_ranking;
+}
+
+template<class Policy>
+void
 ContentStoreImpl<Policy>::SetRateAtTimeout (double rateAtTimeout)
 {
   NS_ASSERT_MSG (rateAtTimeout >= 0.01 && rateAtTimeout <= 1, "Rate at timeout should be at least 0.01 and at most 1");
@@ -302,7 +330,7 @@ template<class Policy>
 void
 ContentStoreImpl<Policy>::SetExclusionDiscardedTimeout (double exclusionDiscardedTimeout)
 {
-  NS_ASSERT_MSG (exclusionDiscardedTimeout >= 0, "Exclusion discarded timeout cannot be negative");
+  NS_ASSERT_MSG (exclusionDiscardedTimeout >= -1, "Exclusion discarded timeout cannot be negative. If you want to disable the discard factor you should set this attribute to -1");
 
   this->exclusion_discarded_timeout = exclusionDiscardedTimeout;
 }
