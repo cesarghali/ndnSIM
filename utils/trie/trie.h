@@ -185,7 +185,7 @@ public:
         alpha_to = 0.01;
       }
 
-    if (exclusionDiscardedTimeout != -1)
+    if (exclusionDiscardedTimeout > 0)
       {
         beta = (exclusionDiscardedTimeout) / (-1 * log(0.01));
       }
@@ -397,7 +397,7 @@ public:
                         else
                           {
                             double timeSinceLastExcluded = (Simulator::Now() - it->last_excluded_).GetSeconds();
-                            discardFactor = 1 - exp(timeSinceLastExcluded / it->beta);
+                            discardFactor = 1 - exp((-1 * timeSinceLastExcluded) / it->beta);
                           }
 
                         double rank = exp((-1 * lifeTime) / (discardFactor * (it->alpha_to - (rate * it->alpha_to))));
@@ -486,7 +486,7 @@ public:
                         else
                           {
                             double timeSinceLastExcluded = (Simulator::Now() - it->last_excluded_).GetSeconds();
-                            discardFactor = 1 - exp(timeSinceLastExcluded / it->beta);
+                            discardFactor = 1 - exp((-1 * timeSinceLastExcluded) / it->beta);
                           }
 
                         double rank = exp((-1 * lifeTime) / (discardFactor * (it->alpha_to - (rate * it->alpha_to))));
