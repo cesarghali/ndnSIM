@@ -26,6 +26,8 @@
 #include "ns3/ptr.h"
 #include "ns3/traced-callback.h"
 
+#include "ns3/ndn-face.h"
+
 #include <boost/tuple/tuple.hpp>
 
 namespace ns3 {
@@ -148,7 +150,7 @@ public:
    * used entries index, \see m_contentStore
    */
   virtual boost::tuple<Ptr<Packet>, Ptr<const ContentObject>, Ptr<const Packet> >
-  Lookup (Ptr<const Interest> interest) = 0;
+  Lookup (Ptr<const Interest> interest, Ptr<Face> inFace = NULL) = 0;
 
   /**
    * \brief Add a new content to the content store.

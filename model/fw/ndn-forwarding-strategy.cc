@@ -176,7 +176,7 @@ ForwardingStrategy::OnInterest (Ptr<Face> inFace,
   Ptr<Packet> contentObject;
   Ptr<const ContentObject> contentObjectHeader; // used for tracing
   Ptr<const Packet> payload; // used for tracing
-  boost::tie (contentObject, contentObjectHeader, payload) = m_contentStore->Lookup (header);
+  boost::tie (contentObject, contentObjectHeader, payload) = m_contentStore->Lookup (header, inFace);
   if (contentObject != 0)
     {
       NS_ASSERT (contentObjectHeader != 0);

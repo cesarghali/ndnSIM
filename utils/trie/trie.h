@@ -25,6 +25,9 @@
 #include "ns3/ndn-exclusion.h"
 #include "ns3/nstime.h"
 #include "ns3/simulator.h"
+#include "ns3/node.h"
+#include "ns3/ndn-face.h"
+#include "ns3/ndn-l3-protocol.h"
 
 #include <boost/intrusive/unordered_set.hpp>
 #include <boost/intrusive/list.hpp>
@@ -341,7 +344,7 @@ public:
    * @return ->second is true if prefix in ->first is longer than key
    */
   inline boost::tuple<iterator, bool, iterator>
-  find (const FullKey &key, ns3::Ptr<const Exclusion> exclusionFilter = NULL, bool disableRanking = true, int count = -1)
+  find (const FullKey &key, ns3::Ptr<const Exclusion> exclusionFilter = NULL, bool disableRanking = true, int count = -1, Ptr<Face> inFace = NULL)
   {
     trie *trieNode = this;
     iterator foundNode = (payload_ != PayloadTraits::empty_payload) ? this : 0;
@@ -378,6 +381,21 @@ public:
                   {
                     it->num_of_exclusions_++;
                     it->last_excluded_ = Simulator::Now();
+                    if (inFace != NULL)
+                      {
+                        bool found = false;
+                        for (uint i = 0; i < it->faces_with_exclusions.size(); i++)
+                          {
+                            if (it->faces_with_exclusions.at(i) == inFace->GetId())
+                              {
+                                found = true;
+                              }
+                          }
+                        if (!found)
+                          {
+                            it->faces_with_exclusions.push_back(inFace->GetId());
+                          }
+                      }
                   }
                 else
                   {
@@ -404,7 +422,18 @@ public:
                             discardFactor = 1 - exp((-1 * timeSinceLastExcluded) / it->beta);
                           }
 
-                        double rank = exp((-1 * lifeTime) / (discardFactor * (it->alpha_to - (rate * it->alpha_to))));
+                        double interfaceRatio;
+                        if (inFace == NULL)
+                          {
+                            interfaceRatio = 1;
+                          }
+                        else
+                          {
+                            interfaceRatio = (((double)(inFace->GetNode()->GetObject<L3Protocol>()->GetNFaces())) - it->faces_with_exclusions.size()) /
+                              ((double)(inFace->GetNode()->GetObject<L3Protocol>()->GetNFaces()));
+                          }
+
+                        double rank = exp((-1 * lifeTime) / (interfaceRatio * discardFactor * (it->alpha_to - (rate * it->alpha_to))));
                         if (rank > max_rank)
                           {
                             max_rank = rank;
@@ -427,7 +456,7 @@ public:
    */
   template<class Predicate>
   inline boost::tuple<iterator, bool, iterator>
-  find_if (const FullKey &key, Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL, bool disableRanking = true, int count = -1)
+  find_if (const FullKey &key, Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL, bool disableRanking = true, int count = -1, Ptr<Face> inFace = NULL)
   {
     trie *trieNode = this;
     iterator foundNode = (payload_ != PayloadTraits::empty_payload) ? this : 0;
@@ -467,6 +496,21 @@ public:
                   {
                     it->num_of_exclusions_++;
                     it->last_excluded_ = Simulator::Now();
+                    if (inFace != NULL)
+                      {
+                        bool found = false;
+                        for (uint i = 0; i < it->faces_with_exclusions.size(); i++)
+                          {
+                            if (it->faces_with_exclusions.at(i) == inFace->GetId())
+                              {
+                                found = true;
+                              }
+                          }
+                        if (!found)
+                          {
+                            it->faces_with_exclusions.push_back(inFace->GetId());
+                          }
+                      }
                   }
                 else
                   {
@@ -493,7 +537,18 @@ public:
                             discardFactor = 1 - exp((-1 * timeSinceLastExcluded) / it->beta);
                           }
 
-                        double rank = exp((-1 * lifeTime) / (discardFactor * (it->alpha_to - (rate * it->alpha_to))));
+                        double interfaceRatio;
+                        if (inFace == NULL)
+                          {
+                            interfaceRatio = 1;
+                          }
+                        else
+                          {
+                            interfaceRatio = (((double)(inFace->GetNode()->GetObject<L3Protocol>()->GetNFaces())) - it->faces_with_exclusions.size()) /
+                              ((double)(inFace->GetNode()->GetObject<L3Protocol>()->GetNFaces()));
+                          }
+
+                        double rank = exp((-1 * lifeTime) / (interfaceRatio * discardFactor * (it->alpha_to - (rate * it->alpha_to))));
                         if (rank > max_rank)
                           {
                             max_rank = rank;
@@ -539,7 +594,7 @@ public:
    */
   template<class Predicate>
   inline const iterator
-  find_if (Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL, int count = -1)
+  find_if (Predicate pred, ns3::Ptr<const Exclusion> exclusionFilter = NULL, int count = -1, Ptr<Face> inFace = NULL)
   {
     if (payload_ != PayloadTraits::empty_payload && pred (payload_) &&
         exclusionFilter != NULL && !exclusionFilter->Contains(hash_))
@@ -664,6 +719,7 @@ private:
   Time time_added_;
   Time last_excluded_;
   double beta;
+  std::vector<uint> faces_with_exclusions;
 };
 
 

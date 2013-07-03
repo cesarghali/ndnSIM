@@ -25,6 +25,7 @@
 #include "ns3/packet.h"
 #include "ns3/ndn-interest.h"
 #include "ns3/ndn-content-object.h"
+#include "ns3/ndn-face.h"
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
 
@@ -91,7 +92,7 @@ public:
   // from ContentStore
 
   virtual inline boost::tuple<Ptr<Packet>, Ptr<const ContentObject>, Ptr<const Packet> >
-  Lookup (Ptr<const Interest> interest);
+  Lookup (Ptr<const Interest> interest, Ptr<Face> inFace = NULL);
 
   virtual inline bool
   Add (Ptr<const ContentObject> header, Ptr<const Packet> packet);
@@ -201,7 +202,7 @@ ContentStoreImpl< Policy >::GetTypeId ()
 
 template<class Policy>
 boost::tuple<Ptr<Packet>, Ptr<const ContentObject>, Ptr<const Packet> >
-ContentStoreImpl<Policy>::Lookup (Ptr<const Interest> interest)
+ContentStoreImpl<Policy>::Lookup (Ptr<const Interest> interest, Ptr<Face> inFace)
 {
   NS_LOG_FUNCTION (this << interest->GetName ());
 
@@ -218,7 +219,7 @@ ContentStoreImpl<Policy>::Lookup (Ptr<const Interest> interest)
     }
 
   /// @todo Change to search with predicate
-  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName (), exclusionFilter, disable_ranking, count);
+  typename super::const_iterator node = this->deepest_prefix_match (interest->GetName (), exclusionFilter, disable_ranking, count, inFace);
 
   if (node != this->end ())
     {
