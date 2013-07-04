@@ -63,6 +63,7 @@ private:
   Name m_prefix;
   uint32_t m_virtualPayloadSize;
   Time m_freshness;
+  double m_badContentRate;
 };
 
 } // namespace ndn

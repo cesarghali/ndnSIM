@@ -25,6 +25,7 @@
 #include "ns3/ndn-content-object.h"
 #include "ns3/string.h"
 #include "ns3/uinteger.h"
+#include "ns3/double.h"
 #include "ns3/packet.h"
 #include "ns3/simulator.h"
 
@@ -66,6 +67,10 @@ Producer::GetTypeId (void)
                    TimeValue (Seconds (0)),
                    MakeTimeAccessor (&Producer::m_freshness),
                    MakeTimeChecker ())
+    .AddAttribute ("BadContentRate", "Indicate the probability of which the producer is going to generate a bad content (with a bogus hash)",
+                   DoubleValue (0.0),
+                   MakeDoubleAccessor (&Producer::m_badContentRate),
+                   MakeDoubleChecker<double> ())
     ;
         
   return tid;
@@ -130,6 +135,14 @@ Producer::OnInterest (const Ptr<const Interest> &interest, Ptr<Packet> origPacke
   gettimeofday(&tv, NULL);
   srand((int)Simulator::Now().GetNanoSeconds() + tv.tv_usec);
   header->SetSignature(rand());
+  // Computing the hash in the content header
+  header->SetHash(header->ComputeHash());
+  // Produce a bad content
+  double r = (double)rand() / RAND_MAX;
+  if (m_badContentRate != 0 && r <= m_badContentRate)
+    {
+      header->SetSignature(rand());
+    }
 
   NS_LOG_INFO ("node("<< GetNode()->GetId() <<") respodning with ContentObject:\n" << boost::cref(*header));
   
