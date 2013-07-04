@@ -65,7 +65,7 @@ ConsumerCbr::GetTypeId (void)
                    MakeIntegerChecker<uint32_t> ())
 
     .AddAttribute ("ExclusionRate",
-                   "The exclusion rate of received contents in future interests",
+                   "The exclusion rate of received contents in future interests. If set to 0, bad content will be excluded, otherwise, this rate forces exclusion",
                    DoubleValue (0.0),
                    MakeDoubleAccessor (&ConsumerCbr::m_exclusionRate),
                    MakeDoubleChecker<double> ())

@@ -256,13 +256,28 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
 
   // NS_LOG_INFO ("Received content object: " << boost::cref(*contentObject));
 
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  srand(Simulator::Now().GetNanoSeconds() + tv.tv_usec);
-  double r = (double)rand() / RAND_MAX;
-  if (m_exclusionRate != 0 && r <= m_exclusionRate && count < MAX_EXCLUSIONS)
+  bool exclude = false;
+  if (m_exclusionRate != 0)
     {
-      // Calculate the SHA_1 has of the content object                                                                                                                                                               
+      struct timeval tv;
+      gettimeofday(&tv, NULL);
+      srand(Simulator::Now().GetNanoSeconds() + tv.tv_usec);
+      double r = (double)rand() / RAND_MAX;
+      if (r <= m_exclusionRate && count < MAX_EXCLUSIONS)
+        {
+          exclude = true;
+        }
+    }
+  else
+    {
+      if (contentObject->GetHash().compare(contentObject->ComputeHash()) != 0)
+        {
+          exclude = true;
+        }
+    }
+
+  if (exclude == true)
+    {
       std::string strhash = contentObject->GetHash();
       bool found = false;
       for (int i = 0; i < count; i++)
@@ -272,7 +287,7 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
               found = true;
             }
         }
-
+          
       if (!found)
         {
           memset(m_hash[count], 0, HASH_SIZE + 1);
