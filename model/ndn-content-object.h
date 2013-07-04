@@ -22,6 +22,8 @@
 #ifndef _NDN_CONTENT_OBJECT_HEADER_H_
 #define _NDN_CONTENT_OBJECT_HEADER_H_
 
+#define HASH_SIZE   40
+
 #include "ns3/integer.h"
 #include "ns3/header.h"
 #include "ns3/simple-ref-count.h"
@@ -71,6 +73,10 @@ namespace ndn {
  *      ~                           Content                             ~
  *      |							        |	
  *      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *      |                                                               |
+ *      |                            Hash                               |
+ *      |                                                               |
+ *      +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  */
 class ContentObject : public SimpleRefCount<ContentObject,Header>
@@ -155,6 +161,12 @@ public:
   GetSignature () const;
 
   std::string
+  ComputeHash () const;
+
+  void
+  SetHash (std::string hash);
+
+  std::string
   GetHash () const;
 
   //////////////////////////////////////////////////////////////////
@@ -171,6 +183,7 @@ private:
   Time m_freshness;
   Time m_timestamp;
   uint32_t m_signature; // 0, means no signature, any other value application dependent (not a real signature)
+  char m_hash[HASH_SIZE + 1];
 };
 
 typedef ContentObject ContentObjectHeader;

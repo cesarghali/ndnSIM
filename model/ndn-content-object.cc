@@ -49,6 +49,7 @@ ContentObject::GetTypeId (void)
 ContentObject::ContentObject ()
   : m_signature (0)
 {
+  memset(m_hash, 0, HASH_SIZE + 1);
 }
 
 void
@@ -114,7 +115,7 @@ ContentObject::GetSignature () const
 }
 
 std::string
-ContentObject::GetHash () const
+ContentObject::ComputeHash () const
 {
   // Calculate the SHA_1 has of the packet payload               
   std::string strhash;
@@ -172,10 +173,26 @@ ContentObject::GetHash () const
   return strhash;
 }
 
+void
+ContentObject::SetHash (std::string hash)
+{
+  for (int i = 0; i < HASH_SIZE; i++)
+    {
+      m_hash[i] = hash[i];
+    }
+  m_hash[HASH_SIZE] = '\0';  
+}
+
+std::string
+ContentObject::GetHash () const
+{
+  return std::string(m_hash, HASH_SIZE);
+}
+
 uint32_t
 ContentObject::GetSerializedSize () const
 {
-  uint32_t size = 2 + ((2 + 2) + (m_name->GetSerializedSize ()) + (2 + 2 + 4 + 2 + 2 + (2 + 0)));
+  uint32_t size = 2 + ((2 + 2) + (m_name->GetSerializedSize ()) + (2 + 2 + 4 + 2 + 2 + (2 + 0))) + HASH_SIZE;
   if (m_signature != 0)
     size += 4;
   
@@ -214,6 +231,8 @@ ContentObject::Serialize (Buffer::Iterator start) const
   start.WriteU16 (static_cast<uint16_t> (m_freshness.ToInteger (Time::S)));
   start.WriteU16 (0); // reserved 
   start.WriteU16 (0); // Length (ContentInfoOptions)
+
+  start.Write((uint8_t*)m_hash, HASH_SIZE);
 
   // that's it folks
 }
@@ -266,6 +285,11 @@ ContentObject::Deserialize (Buffer::Iterator start)
 
   NS_ASSERT_MSG (i.GetDistanceFrom (start) == GetSerializedSize (),
                  "Something wrong with ContentObject::Deserialize");
+
+  uint8_t buffer[HASH_SIZE];
+  i.Read(buffer, HASH_SIZE);
+  memset(m_hash, 0, HASH_SIZE + 1);
+  memcpy(m_hash, buffer, HASH_SIZE);
   
   return i.GetDistanceFrom (start);
 }
