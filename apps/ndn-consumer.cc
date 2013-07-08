@@ -154,6 +154,8 @@ Consumer::StartApplication () // Called at time specified by Start
   // do base stuff
   App::StartApplication ();
 
+  count = 0;
+
   ScheduleNextPacket ();
 }
 
@@ -216,7 +218,7 @@ Consumer::SendPacket ()
   interestHeader.SetInterestLifetime    (m_interestLifeTime);
 
   // Add Exclusion
-  for (int i = 0; i < count; i++)
+  for (int i = 0; i < (count < MAX_EXCLUSIONS ? count : MAX_EXCLUSIONS); i++)
     {
       interestHeader.AddExclusion(m_hash[i]);
     }
@@ -263,7 +265,7 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
       gettimeofday(&tv, NULL);
       srand(Simulator::Now().GetNanoSeconds() + tv.tv_usec);
       double r = (double)rand() / RAND_MAX;
-      if (r <= m_exclusionRate && count < MAX_EXCLUSIONS)
+      if (r <= m_exclusionRate)
         {
           exclude = true;
         }
@@ -290,8 +292,8 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
           
       if (!found)
         {
-          memset(m_hash[count], 0, HASH_SIZE + 1);
-          memcpy(m_hash[count], strhash.c_str(), HASH_SIZE);
+          memset(m_hash[count % MAX_EXCLUSIONS], 0, HASH_SIZE + 1);
+          memcpy(m_hash[count % MAX_EXCLUSIONS], strhash.c_str(), HASH_SIZE);
           count++;
         }
     }
