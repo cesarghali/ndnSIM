@@ -401,7 +401,7 @@ public:
                   {
                     reachLast = true;
 
-                    if (count == -1 && disableRanking == true)
+                    if (count == -1 || disableRanking == true)
                       {
                         foundNode = &(*it);
                         break;
