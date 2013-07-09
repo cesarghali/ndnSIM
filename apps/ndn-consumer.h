@@ -203,6 +203,7 @@ protected:
   TracedCallback<Ptr<App> /* app */, uint32_t /* seqno */,
                  Time /* delay */, uint32_t /*retx count*/,
                  int32_t /*hop count*/> m_firstInterestDataDelay;
+  TracedCallback<Ptr<const ContentObject> > m_badContentReceivedTrace;
 
 /// @endcond
 };

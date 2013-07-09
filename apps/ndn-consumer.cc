@@ -82,6 +82,9 @@ Consumer::GetTypeId (void)
 
     .AddTraceSource ("FirstInterestDataDelay", "Delay between first transmitted Interest and received Data",
                      MakeTraceSourceAccessor (&Consumer::m_firstInterestDataDelay))
+
+    .AddTraceSource ("BadContentReceived", "Trace called every time the consumer receives a bad content",
+                     MakeTraceSourceAccessor (&Consumer::m_badContentReceivedTrace))
     ;
 
   return tid;
@@ -280,6 +283,8 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
 
   if (exclude == true)
     {
+      m_badContentReceivedTrace(contentObject);
+
       std::string strhash = contentObject->GetHash();
       bool found = false;
       for (int i = 0; i < count; i++)
