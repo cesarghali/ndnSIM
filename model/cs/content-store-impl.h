@@ -140,12 +140,19 @@ private:
   double
   GetExclusionDiscardedTimeout () const;
 
+  void
+  SetSearchCacheAfter (int time);
+
+  int
+  GetSearchCacheAfter () const;
+
 private:
   static LogComponent g_log; ///< @brief Logging variable
   boost::unordered_map<std::string, int> name_count;
   bool disable_ranking;
   double rate_at_timeout;
   double exclusion_discarded_timeout;
+  double search_cache_after;
 
   /// @brief trace of for entry additions (fired every time entry is successfully added to the cache): first parameter is pointer to the CS entry
   TracedCallback< Ptr<const Entry> > m_didAddEntry;
@@ -192,6 +199,12 @@ ContentStoreImpl< Policy >::GetTypeId ()
                    MakeBooleanAccessor (&ContentStoreImpl< Policy >::GetDisableRanking,
                                        &ContentStoreImpl< Policy >::SetDisableRanking),
                    MakeBooleanChecker ())
+    .AddAttribute ("SearchCacheAfter",
+                   "Start seaching the cache after the number of seconds specified by this attribute",
+                   IntegerValue (0),
+                   MakeUintegerAccessor (&ContentStoreImpl< Policy >::GetSearchCacheAfter,
+                                         &ContentStoreImpl< Policy >::SetSearchCacheAfter),
+                   MakeUintegerChecker<uint32_t> ())
 
     .AddTraceSource ("DidAddEntry", "Trace fired every time entry is successfully added to the cache",
                      MakeTraceSourceAccessor (&ContentStoreImpl< Policy >::m_didAddEntry))
@@ -204,6 +217,12 @@ template<class Policy>
 boost::tuple<Ptr<Packet>, Ptr<const ContentObject>, Ptr<const Packet> >
 ContentStoreImpl<Policy>::Lookup (Ptr<const Interest> interest, Ptr<Face> inFace)
 {
+  if (Simulator::Now().GetSeconds() < search_cache_after)
+    {
+      NS_LOG_FUNCTION ("Skip lookuping up in the cache");
+      return boost::tuple<Ptr<Packet>, Ptr<ContentObject>, Ptr<Packet> > (0, 0, 0);
+    }
+
   NS_LOG_FUNCTION (this << interest->GetName ());
 
   // Read the exclusion filter if exists in the interest
@@ -341,6 +360,23 @@ double
 ContentStoreImpl<Policy>::GetExclusionDiscardedTimeout () const
 {
   return this->exclusion_discarded_timeout;
+}
+
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::SetSearchCacheAfter (int searchCacheAfter)
+{
+  NS_ASSERT_MSG (search_cache_after >= 0, "SearchCacheAfter attribute cannot be negative");
+
+  this->search_cache_after = searchCacheAfter;
+}
+
+template<class Policy>
+int
+ContentStoreImpl<Policy>::GetSearchCacheAfter () const
+{
+  return this->search_cache_after;
 }
 
 template<class Policy>
