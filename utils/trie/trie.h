@@ -418,29 +418,29 @@ public:
                             double lifeTime = (Simulator::Now() - it->time_added_).GetSeconds();
                             double rate = it->num_of_exclusions_ / (double)count;
                             
-                            // double discardFactor;
-                            // if (it->num_of_exclusions_ == 0 || it->beta == -1)
-                            //   {
-                            //     discardFactor = 1;
-                            //   }
-                            // else
-                            //   {
-                            //     double timeSinceLastExcluded = (Simulator::Now() - it->last_excluded_).GetSeconds();
-                            //     discardFactor = 1 - exp((-1 * timeSinceLastExcluded) / it->beta);
-                            //   }
+                            double discardFactor;
+                            if (it->num_of_exclusions_ == 0 || it->beta == -1)
+                              {
+                                discardFactor = 1;
+                              }
+                            else
+                              {
+                                double timeSinceLastExcluded = (Simulator::Now() - it->last_excluded_).GetSeconds();
+                                discardFactor = 1 - exp((-1 * timeSinceLastExcluded) / it->beta);
+                              }
                             
-                            // double interfaceRatio;
-                            // if (inFace == NULL)
-                            //   {
-                            //     interfaceRatio = 1;
-                            //   }
-                            // else
-                            //   {
-                            //     interfaceRatio = (((double)(inFace->GetNode()->GetObject<L3Protocol>()->GetNFaces())) - it->faces_with_exclusions.size()) /
-                            //       ((double)(inFace->GetNode()->GetObject<L3Protocol>()->GetNFaces()));
-                            //   }
+                            double interfaceRatio;
+                            if (inFace == NULL)
+                              {
+                                interfaceRatio = 1;
+                              }
+                            else
+                              {
+                                interfaceRatio = (((double)(inFace->GetNode()->GetObject<L3Protocol>()->GetNFaces())) - it->faces_with_exclusions.size()) /
+                                  ((double)(inFace->GetNode()->GetObject<L3Protocol>()->GetNFaces()));
+                              }
                             
-                            double rank = exp((-1 * lifeTime) / (/*interfaceRatio * discardFactor **/ (it->alpha_to - (rate * it->alpha_to))));
+                            double rank = exp((-1 * lifeTime) / (interfaceRatio * discardFactor * (it->alpha_to - (rate * it->alpha_to))));
                             if (rank > max_rank)
                               {
                                 max_rank = rank;
