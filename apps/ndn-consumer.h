@@ -137,6 +137,7 @@ protected:
   EventId         m_retxEvent; ///< @brief Event to check whether or not retransmission should be performed
 
   double          m_exclusionRate;   ///< @brief exclusion rate of received contents in future interests≈
+  bool            m_disableExclusion;
   char            m_hash[MAX_EXCLUSIONS][HASH_SIZE + 1];   ///< @brief contains the excluded content digests
   int             count;
   bool            m_repeat;  ///< @brief reset the currently requested sequence number when the maximum is reached

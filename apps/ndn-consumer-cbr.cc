@@ -70,6 +70,12 @@ ConsumerCbr::GetTypeId (void)
                    MakeDoubleAccessor (&ConsumerCbr::m_exclusionRate),
                    MakeDoubleChecker<double> ())
 
+    .AddAttribute ("DisableExclusion",
+                   "Accept all received content objects and never exclude any of them",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&ConsumerCbr::m_disableExclusion),
+                   MakeBooleanChecker ())
+
     .AddAttribute ("Repeat",
                    "Repeat sending interest when the max sequence is reached",
                    BooleanValue (false),

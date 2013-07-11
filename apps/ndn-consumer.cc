@@ -261,50 +261,53 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
 
   // NS_LOG_INFO ("Received content object: " << boost::cref(*contentObject));
 
-  bool exclude = false;
-  if (m_exclusionRate != 0)
+  if (!m_disableExclusion)
     {
-      struct timeval tv;
-      gettimeofday(&tv, NULL);
-      srand(Simulator::Now().GetNanoSeconds() + tv.tv_usec);
-      double r = (double)rand() / RAND_MAX;
-      if (r <= m_exclusionRate)
+      bool exclude = false;
+      if (m_exclusionRate != 0)
         {
-          exclude = true;
-        }
-    }
-  else
-    {
-      if (contentObject->GetHash().compare(contentObject->ComputeHash()) != 0)
-        {
-          exclude = true;
-        }
-    }
-
-  if (exclude == true)
-    {
-      m_badContentReceivedTrace(contentObject);
-
-      std::string strhash = contentObject->GetHash();
-      bool found = false;
-      for (int i = 0; i < count; i++)
-        {
-          if (memcmp(m_hash[i], strhash.c_str(), HASH_SIZE) == 0)
+          struct timeval tv;
+          gettimeofday(&tv, NULL);
+          srand(Simulator::Now().GetNanoSeconds() + tv.tv_usec);
+          double r = (double)rand() / RAND_MAX;
+          if (r <= m_exclusionRate)
             {
-              found = true;
+              exclude = true;
             }
         }
-          
-      if (!found)
+      else
         {
-          memset(m_hash[count % MAX_EXCLUSIONS], 0, HASH_SIZE + 1);
-          memcpy(m_hash[count % MAX_EXCLUSIONS], strhash.c_str(), HASH_SIZE);
-          count++;
+          if (contentObject->GetHash().compare(contentObject->ComputeHash()) != 0)
+            {
+              exclude = true;
+            }
         }
-    }
-  else
-    {
-      count = 0;
+
+      if (exclude == true)
+        {
+          m_badContentReceivedTrace(contentObject);
+
+          std::string strhash = contentObject->GetHash();
+          bool found = false;
+          for (int i = 0; i < count; i++)
+            {
+              if (memcmp(m_hash[i], strhash.c_str(), HASH_SIZE) == 0)
+                {
+                  found = true;
+                }
+            }
+          
+          if (!found)
+            {
+              memset(m_hash[count % MAX_EXCLUSIONS], 0, HASH_SIZE + 1);
+              memcpy(m_hash[count % MAX_EXCLUSIONS], strhash.c_str(), HASH_SIZE);
+              count++;
+            }
+        }
+      else
+        {
+          count = 0;
+        }
     }
 
   uint32_t seq = boost::lexical_cast<uint32_t> (contentObject->GetName ().GetComponents ().back ());
