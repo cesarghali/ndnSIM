@@ -71,6 +71,9 @@ Producer::GetTypeId (void)
                    DoubleValue (0.0),
                    MakeDoubleAccessor (&Producer::m_badContentRate),
                    MakeDoubleChecker<double> ())
+
+    .AddTraceSource ("BadContentTransmitted", "Trace called every time the producer sends a bad content",
+                     MakeTraceSourceAccessor (&Producer::m_badContentTransmittedTrace))
     ;
         
   return tid;
@@ -161,6 +164,12 @@ Producer::OnInterest (const Ptr<const Interest> &interest, Ptr<Packet> origPacke
   m_protocolHandler (packet);
   
   m_transmittedContentObjects (header, packet, this, m_face);
+  
+  // Fire event bad content transmitted
+  if (m_badContentRate != 0 && r <= m_badContentRate)
+    {
+      m_badContentTransmittedTrace(header);
+    }
 }
 
 } // namespace ndn

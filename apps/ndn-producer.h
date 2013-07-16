@@ -59,6 +59,8 @@ protected:
   virtual void
   StopApplication ();     // Called at time specified by Stop
 
+  TracedCallback<Ptr<const ContentObject> > m_badContentTransmittedTrace;
+
 private:
   Name m_prefix;
   uint32_t m_virtualPayloadSize;
