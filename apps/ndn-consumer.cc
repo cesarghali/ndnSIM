@@ -85,6 +85,9 @@ Consumer::GetTypeId (void)
 
     .AddTraceSource ("BadContentReceived", "Trace called every time the consumer receives a bad content",
                      MakeTraceSourceAccessor (&Consumer::m_badContentReceivedTrace))
+
+    .AddTraceSource ("GoodContentReceived", "Trace called every time the consumer receives a good content",
+                     MakeTraceSourceAccessor (&Consumer::m_goodContentReceivedTrace))
     ;
 
   return tid;
@@ -306,6 +309,8 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
         }
       else
         {
+          m_goodContentReceivedTrace(contentObject);
+
           count = 0;
         }
     }

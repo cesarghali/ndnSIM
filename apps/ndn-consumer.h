@@ -205,6 +205,7 @@ protected:
                  Time /* delay */, uint32_t /*retx count*/,
                  int32_t /*hop count*/> m_firstInterestDataDelay;
   TracedCallback<Ptr<const ContentObject> > m_badContentReceivedTrace;
+  TracedCallback<Ptr<const ContentObject> > m_goodContentReceivedTrace;
 
 /// @endcond
 };
