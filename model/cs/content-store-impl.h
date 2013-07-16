@@ -261,6 +261,12 @@ template<class Policy>
 bool
 ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet> packet)
 {
+  // If maximum size is -1, do not add
+  if (GetMaxSize() == (sizeof(uint32_t) * 256) - 1)
+    {
+      return true;
+    }
+
   NS_LOG_FUNCTION (this << header->GetName ());
 
   // Calculate the SHA_1 has of the content object
