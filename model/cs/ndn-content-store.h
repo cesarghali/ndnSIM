@@ -163,6 +163,16 @@ public:
   virtual bool
   Add (Ptr<const ContentObject> header, Ptr<const Packet> packet) = 0;
 
+  /**
+   * \brief Populate the cache with bad content. The bad content details are
+   * specified by BadContentName, BadContentFreshness and BadContentCount attributes
+   */
+  virtual void
+  Populate () = 0;
+
+  virtual void
+  Populate (std::string badContentName, Time badContentFreshness, uint32_t badContentCount, uint32_t badContentPayloadSize) = 0;
+
   // /*
   //  * \brief Add a new content to the content store.
   //  *

@@ -37,6 +37,7 @@
 
 #include "../../utils/trie/trie-with-policy.h"
 
+#include <sys/time.h>
 
 namespace ns3 {
 namespace ndn {
@@ -97,6 +98,12 @@ public:
   virtual inline bool
   Add (Ptr<const ContentObject> header, Ptr<const Packet> packet);
 
+  virtual inline void
+  Populate ();
+
+  virtual inline void
+  Populate (std::string badContentName, Time badContentFreshness, uint32_t badContentCount, uint32_t badContentPayloadSize);
+
   // virtual bool
   // Remove (Ptr<Interest> header);
 
@@ -146,6 +153,30 @@ private:
   int
   GetSearchCacheAfter () const;
 
+  void
+  SetBadContentName (std::string badContentName);
+
+  std::string
+  GetBadContentName () const;
+
+  void
+  SetBadContentFreshness (Time badContentFreshness);
+
+  Time
+  GetBadContentFreshness () const;
+
+  void
+  SetBadContentCount (uint32_t badContentCount);
+
+  uint32_t
+  GetBadContentCount () const;
+
+  void
+  SetBadContentPayloadSize (uint32_t badContentPayloadSize);
+
+  uint32_t
+  GetBadContentPayloadSize () const;
+
 private:
   static LogComponent g_log; ///< @brief Logging variable
   boost::unordered_map<std::string, int> name_count;
@@ -153,6 +184,10 @@ private:
   double rate_at_timeout;
   double exclusion_discarded_timeout;
   double search_cache_after;
+  std::string bad_content_name;
+  Time bad_content_freshness;
+  uint32_t bad_content_count;
+  uint32_t bad_content_payload_size;
 
   /// @brief trace of for entry additions (fired every time entry is successfully added to the cache): first parameter is pointer to the CS entry
   TracedCallback< Ptr<const Entry> > m_didAddEntry;
@@ -197,7 +232,7 @@ ContentStoreImpl< Policy >::GetTypeId ()
                    "If set, the first content that matches the name in CS and is not excluded will be served. No content ranking will be applied.",
                    BooleanValue (false),
                    MakeBooleanAccessor (&ContentStoreImpl< Policy >::GetDisableRanking,
-                                       &ContentStoreImpl< Policy >::SetDisableRanking),
+                                        &ContentStoreImpl< Policy >::SetDisableRanking),
                    MakeBooleanChecker ())
     .AddAttribute ("SearchCacheAfter",
                    "Start seaching the cache after the number of seconds specified by this attribute",
@@ -205,6 +240,30 @@ ContentStoreImpl< Policy >::GetTypeId ()
                    MakeUintegerAccessor (&ContentStoreImpl< Policy >::GetSearchCacheAfter,
                                          &ContentStoreImpl< Policy >::SetSearchCacheAfter),
                    MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("BadContentName",
+                   "Set the bad content name of the content objects that will be injected in the cache at initialization time",
+                   StringValue (""),
+                   MakeStringAccessor (&ContentStoreImpl< Policy >::GetBadContentName,
+                                       &ContentStoreImpl< Policy >::SetBadContentName),
+                   MakeStringChecker ())
+    .AddAttribute ("BadContentFreshness",
+                   "Freshness of bad content objects, if 0, then unlimited freshness",
+                   TimeValue (Seconds (0)),
+                   MakeTimeAccessor (&ContentStoreImpl< Policy >::GetBadContentFreshness,
+                                     &ContentStoreImpl< Policy >::SetBadContentFreshness),
+                   MakeTimeChecker ())
+    .AddAttribute ("BadContentCount",
+                   "Set the number of bad content objects to be injected",
+                   StringValue ("0"),
+                   MakeUintegerAccessor (&ContentStoreImpl< Policy >::GetBadContentCount,
+                                         &ContentStoreImpl< Policy >::SetBadContentCount),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("BadContentPayloadSize",
+                   "Virtual payload size for Content packets",
+                   UintegerValue (1024),
+                   MakeUintegerAccessor(&ContentStoreImpl< Policy >::GetBadContentPayloadSize,
+                                        &ContentStoreImpl< Policy >::SetBadContentPayloadSize),
+                   MakeUintegerChecker<uint32_t>())
 
     .AddTraceSource ("DidAddEntry", "Trace fired every time entry is successfully added to the cache",
                      MakeTraceSourceAccessor (&ContentStoreImpl< Policy >::m_didAddEntry))
@@ -298,6 +357,49 @@ ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet
 
 template<class Policy>
 void
+ContentStoreImpl<Policy>::Populate ()
+{
+  for (uint32_t i = 0; i < bad_content_count; i++)
+    {
+      static ContentObjectTail tail;
+
+      Ptr<ContentObject> header = Create<ContentObject> ();
+      header->SetName (Create<Name> (bad_content_name));
+      header->SetFreshness (bad_content_freshness);
+      // Add timestamp
+      header->SetTimestamp(Simulator::Now());
+      // Add signature
+      struct timeval tv;
+      gettimeofday(&tv, NULL);
+      srand((int)Simulator::Now().GetNanoSeconds() + tv.tv_usec);
+      header->SetSignature(rand());
+      // Computing the hash in the content header
+      header->SetHash(header->ComputeHash());
+      // Produce a bad content
+      header->SetSignature(rand());
+
+      Ptr<Packet> packet = Create<Packet> (bad_content_payload_size);
+      packet->AddHeader (*header);
+      packet->AddTrailer (tail);
+
+      Add (header, packet);
+    }
+}
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::Populate (std::string badContentName, Time badContentFreshness, uint32_t badContentCount, uint32_t badContentPayloadSize)
+{
+  SetBadContentName(badContentName);
+  SetBadContentFreshness(badContentFreshness);
+  SetBadContentCount(badContentCount);
+  SetBadContentPayloadSize(badContentPayloadSize);
+
+  Populate();
+}
+
+template<class Policy>
+void
 ContentStoreImpl<Policy>::Print (std::ostream &os) const
 {
   for (typename super::policy_container::const_iterator item = this->getPolicy ().begin ();
@@ -383,6 +485,62 @@ int
 ContentStoreImpl<Policy>::GetSearchCacheAfter () const
 {
   return this->search_cache_after;
+}
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::SetBadContentName (std::string badContentName)
+{
+  bad_content_name = badContentName;
+}
+
+template<class Policy>
+std::string
+ContentStoreImpl<Policy>::GetBadContentName () const
+{
+  return bad_content_name;
+}
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::SetBadContentFreshness (Time badContentFreshness)
+{
+  bad_content_freshness = badContentFreshness;
+}
+
+template<class Policy>
+Time
+ContentStoreImpl<Policy>::GetBadContentFreshness () const
+{
+  return bad_content_freshness;
+}
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::SetBadContentCount (uint32_t badContentCount)
+{
+  bad_content_count = badContentCount;
+}
+
+template<class Policy>
+uint32_t
+ContentStoreImpl<Policy>::GetBadContentCount () const
+{
+  return bad_content_count;
+}
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::SetBadContentPayloadSize (uint32_t badContentPayloadSize)
+{
+  bad_content_payload_size = badContentPayloadSize;
+}
+
+template<class Policy>
+uint32_t
+ContentStoreImpl<Policy>::GetBadContentPayloadSize () const
+{
+  return bad_content_payload_size;
 }
 
 template<class Policy>
