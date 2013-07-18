@@ -109,6 +109,14 @@ public:
                    const std::string &attr4 = "", const std::string &value4 = "");
 
   /**
+   * @brief Set content store attribute
+   * @param attr string, represeting the attribute
+   * @param value string, represering the value of the attribute
+   **/
+  void
+  SetContentStoreAttribute (const std::string &attr, const std::string &value);
+
+  /**
    * @brief Set PIT class and its attributes
    * @param pitClass string, representing class of PIT
    */

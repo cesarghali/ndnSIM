@@ -134,6 +134,12 @@ StackHelper::SetContentStore (const std::string &contentStore,
 }
 
 void
+StackHelper::SetContentStoreAttribute (const std::string &attr, const std::string &value)
+{
+  m_contentStoreFactory.Set (attr, StringValue (value));
+}
+
+void
 StackHelper::SetPit (const std::string &pitClass,
                      const std::string &attr1, const std::string &value1,
                      const std::string &attr2, const std::string &value2,
@@ -434,7 +440,6 @@ StackHelper::AddRoute (const std::string &nodeName, const std::string &prefix, c
 
   AddRoute (node, prefix, otherNode, metric);
 }
-
 
 } // namespace ndn
 } // namespace ns3
