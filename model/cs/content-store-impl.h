@@ -177,6 +177,12 @@ private:
   uint32_t
   GetBadContentPayloadSize () const;
 
+  void
+  SetBadContentRate (double badContentRate);
+
+  double
+  GetBadContentRate () const;
+
 private:
   static LogComponent g_log; ///< @brief Logging variable
   boost::unordered_map<std::string, int> name_count;
@@ -188,6 +194,7 @@ private:
   Time bad_content_freshness;
   uint32_t bad_content_count;
   uint32_t bad_content_payload_size;
+  double bad_content_rate;
 
   /// @brief trace of for entry additions (fired every time entry is successfully added to the cache): first parameter is pointer to the CS entry
   TracedCallback< Ptr<const Entry> > m_didAddEntry;
@@ -264,6 +271,12 @@ ContentStoreImpl< Policy >::GetTypeId ()
                    MakeUintegerAccessor(&ContentStoreImpl< Policy >::GetBadContentPayloadSize,
                                         &ContentStoreImpl< Policy >::SetBadContentPayloadSize),
                    MakeUintegerChecker<uint32_t>())
+    .AddAttribute ("BadContentRate",
+                   "Indicate the probability of which the producer is going to generate a bad content (with a bogus hash)",
+                   DoubleValue (0.0),
+                   MakeDoubleAccessor (&ContentStoreImpl< Policy >::GetBadContentRate,
+                                       &ContentStoreImpl< Policy >::SetBadContentRate),
+                   MakeDoubleChecker<double> ())
 
     .AddTraceSource ("DidAddEntry", "Trace fired every time entry is successfully added to the cache",
                      MakeTraceSourceAccessor (&ContentStoreImpl< Policy >::m_didAddEntry))
@@ -376,7 +389,11 @@ ContentStoreImpl<Policy>::Populate ()
       // Computing the hash in the content header
       header->SetHash(header->ComputeHash());
       // Produce a bad content
-      header->SetSignature(rand());
+      double r = (double)rand() / RAND_MAX;
+      if (bad_content_rate != 0 && r <= bad_content_rate)
+        {
+          header->SetSignature(rand());
+        }
 
       Ptr<Packet> packet = Create<Packet> (bad_content_payload_size);
       packet->AddHeader (*header);
@@ -541,6 +558,20 @@ uint32_t
 ContentStoreImpl<Policy>::GetBadContentPayloadSize () const
 {
   return bad_content_payload_size;
+}
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::SetBadContentRate (double badContentRate)
+{
+  bad_content_rate = badContentRate;
+}
+
+template<class Policy>
+double
+ContentStoreImpl<Policy>::GetBadContentRate () const
+{
+  return bad_content_rate;
 }
 
 template<class Policy>
