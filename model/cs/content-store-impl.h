@@ -70,7 +70,6 @@ private:
 };
 
 
-
 template<class Policy>
 class ContentStoreImpl : public ContentStore,
                          protected ndnSIM::trie_with_policy< Name,
@@ -97,6 +96,9 @@ public:
 
   virtual inline bool
   Add (Ptr<const ContentObject> header, Ptr<const Packet> packet);
+
+  virtual inline void
+  PopulateSingle (ContentType type);
 
   virtual inline void
   Populate ();
@@ -370,36 +372,50 @@ ContentStoreImpl<Policy>::Add (Ptr<const ContentObject> header, Ptr<const Packet
 
 template<class Policy>
 void
-ContentStoreImpl<Policy>::Populate ()
+ContentStoreImpl<Policy>::PopulateSingle (ContentType type)
 {
-  for (uint32_t i = 0; i < bad_content_count; i++)
-    {
-      static ContentObjectTail tail;
+  static ContentObjectTail tail;
 
-      Ptr<ContentObject> header = Create<ContentObject> ();
-      header->SetName (Create<Name> (bad_content_name));
-      header->SetFreshness (bad_content_freshness);
-      // Add timestamp
-      header->SetTimestamp(Simulator::Now());
-      // Add signature
-      struct timeval tv;
-      gettimeofday(&tv, NULL);
-      srand((int)Simulator::Now().GetNanoSeconds() + tv.tv_usec);
+  Ptr<ContentObject> header = Create<ContentObject> ();
+  header->SetName (Create<Name> (bad_content_name));
+  header->SetFreshness (bad_content_freshness);
+  // Add timestamp
+  header->SetTimestamp(Simulator::Now());
+  // Add signature
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  srand((int)Simulator::Now().GetNanoSeconds() + tv.tv_usec);
+  header->SetSignature(rand());
+  // Computing the hash in the content header
+  header->SetHash(header->ComputeHash());
+  // Produce a bad content
+  if (type == BAD)
+    {
       header->SetSignature(rand());
-      // Computing the hash in the content header
-      header->SetHash(header->ComputeHash());
-      // Produce a bad content
+    }
+  else
+    {
       double r = (double)rand() / RAND_MAX;
       if (bad_content_rate != 0 && r <= bad_content_rate)
         {
           header->SetSignature(rand());
         }
+    }
 
-      Ptr<Packet> packet = Create<Packet> (bad_content_payload_size);
-      packet->AddHeader (*header);
-      packet->AddTrailer (tail);
+  Ptr<Packet> packet = Create<Packet> (bad_content_payload_size);
+  packet->AddHeader (*header);
+  packet->AddTrailer (tail);
 
-      Add (header, packet);
+  Add (header, packet);
+}
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::Populate ()
+{
+  for (uint32_t i = 0; i < bad_content_count; i++)
+    {
+      PopulateSingle(ANY);
     }
 }
 

@@ -47,6 +47,8 @@ typedef Name NameComponents;
 
 class ContentStore;
 
+enum ContentType { GOOD, BAD, ANY };
+
 namespace cs {
 
 /**
@@ -167,6 +169,9 @@ public:
    * \brief Populate the cache with bad content. The bad content details are
    * specified by BadContentName, BadContentFreshness and BadContentCount attributes
    */
+  virtual void
+  PopulateSingle (ContentType type) = 0;
+
   virtual void
   Populate () = 0;
 
