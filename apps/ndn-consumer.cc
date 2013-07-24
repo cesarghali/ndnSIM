@@ -286,9 +286,17 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
             }
         }
 
-      if (exclude == true)
+      if ((m_malicious == false && exclude == true) ||
+          (m_malicious == true && exclude == false))
         {
-          m_badContentReceivedTrace(contentObject);
+          if (m_malicious == false)
+            {
+              m_badContentReceivedTrace(contentObject);
+            }
+          else
+            {
+              m_goodContentReceivedTrace(contentObject);
+            }
 
           std::string strhash = contentObject->GetHash();
           bool found = false;
@@ -309,7 +317,14 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
         }
       else
         {
-          m_goodContentReceivedTrace(contentObject);
+          if (m_malicious == false)
+            {
+              m_goodContentReceivedTrace(contentObject);
+            }
+          else
+            {
+              m_badContentReceivedTrace(contentObject);
+            }
 
           count = 0;
         }

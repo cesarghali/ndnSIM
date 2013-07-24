@@ -76,6 +76,12 @@ ConsumerCbr::GetTypeId (void)
                    MakeBooleanAccessor (&ConsumerCbr::m_disableExclusion),
                    MakeBooleanChecker ())
 
+    .AddAttribute ("Malicious",
+                   "Accept all received bad content objects and exclude good content objects",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&ConsumerCbr::m_malicious),
+                   MakeBooleanChecker ())
+
     .AddAttribute ("Repeat",
                    "Repeat sending interest when the max sequence is reached",
                    BooleanValue (false),
