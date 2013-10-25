@@ -82,6 +82,12 @@ ConsumerCbr::GetTypeId (void)
                    MakeBooleanAccessor (&ConsumerCbr::m_malicious),
                    MakeBooleanChecker ())
 
+    .AddAttribute ("StopOnGoodContent",
+                   "Stop sending interests after receiving good content (only for good consumers)",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&ConsumerCbr::m_stopOnGoodContent),
+                   MakeBooleanChecker ())
+
     .AddAttribute ("Repeat",
                    "Repeat sending interest when the max sequence is reached",
                    BooleanValue (false),

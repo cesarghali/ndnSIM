@@ -139,6 +139,7 @@ protected:
   double          m_exclusionRate;   ///< @brief exclusion rate of received contents in future interests≈
   bool            m_disableExclusion;
   bool            m_malicious;
+  bool            m_stopOnGoodContent;
   char            m_hash[MAX_EXCLUSIONS][HASH_SIZE + 1];   ///< @brief contains the excluded content digests
   int             count;
   bool            m_repeat;  ///< @brief reset the currently requested sequence number when the maximum is reached
@@ -207,6 +208,7 @@ protected:
                  int32_t /*hop count*/> m_firstInterestDataDelay;
   TracedCallback<Ptr<const ContentObject> > m_badContentReceivedTrace;
   TracedCallback<Ptr<const ContentObject> > m_goodContentReceivedTrace;
+  TracedCallback<Ptr<const ContentObject>, const ns3::Time > m_stoppedOnGoodContentTrace;
 
 /// @endcond
 };

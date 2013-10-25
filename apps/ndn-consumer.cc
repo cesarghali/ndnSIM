@@ -88,6 +88,9 @@ Consumer::GetTypeId (void)
 
     .AddTraceSource ("GoodContentReceived", "Trace called every time the consumer receives a good content",
                      MakeTraceSourceAccessor (&Consumer::m_goodContentReceivedTrace))
+
+    .AddTraceSource ("StoppedOnGoodContent", "Trace called when good consumer stops after receiving good content",
+                     MakeTraceSourceAccessor (&Consumer::m_stoppedOnGoodContentTrace))
     ;
 
   return tid;
@@ -180,6 +183,8 @@ Consumer::StopApplication () // Called at time specified by Stop
 void
 Consumer::SendPacket ()
 {
+  // if (!m_malicious && m_stopOnGoodContent && goodContentReceived) return;
+  
   if (!m_active) return;
 
   NS_LOG_FUNCTION_NOARGS ();
@@ -286,6 +291,8 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
             }
         }
 
+      // Malicious consumers act the opposite of good consumers
+      // Then clause: the received content object needs to be excluded
       if ((m_malicious == false && exclude == true) ||
           (m_malicious == true && exclude == false))
         {
@@ -315,11 +322,17 @@ Consumer::OnContentObject (const Ptr<const ContentObject> &contentObject,
               count++;
             }
         }
+      // Else clause: the received content objects does not need to be excluded
       else
         {
           if (m_malicious == false)
             {
               m_goodContentReceivedTrace(contentObject);
+              if (m_stopOnGoodContent)
+                {
+                  m_stoppedOnGoodContentTrace(contentObject, Simulator::Now());
+                  m_active = false;
+                }
             }
           else
             {
