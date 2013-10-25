@@ -3,7 +3,7 @@
 #define _NDN_EXCLUSION_H_
 
 #define HASH_SIZE 40    // the hash used is SHA_1 and it is represented in hex
-#define MAX_EXCLUSIONS 10
+#define MAX_EXCLUSIONS 100
 
 
 #include "ns3/simple-ref-count.h"
