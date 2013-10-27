@@ -138,6 +138,12 @@ private:
   GetDisableRanking () const;
 
   void
+  SetRandomizedBadContent (bool randomizedBadContent);
+
+  bool
+  GetRandomizedBadContent () const;
+
+  void
   SetRateAtTimeout (double rateAtTimeout);
 
   double
@@ -197,6 +203,7 @@ private:
   uint32_t bad_content_count;
   uint32_t bad_content_payload_size;
   double bad_content_rate;
+  bool randomized_bad_content;
 
   /// @brief trace of for entry additions (fired every time entry is successfully added to the cache): first parameter is pointer to the CS entry
   TracedCallback< Ptr<const Entry> > m_didAddEntry;
@@ -279,6 +286,12 @@ ContentStoreImpl< Policy >::GetTypeId ()
                    MakeDoubleAccessor (&ContentStoreImpl< Policy >::GetBadContentRate,
                                        &ContentStoreImpl< Policy >::SetBadContentRate),
                    MakeDoubleChecker<double> ())
+    .AddAttribute ("RandomizedBadContent",
+                   "If set, a random seed will be used when randomizing bad content",
+                   BooleanValue (true),
+                   MakeBooleanAccessor (&ContentStoreImpl< Policy >::GetRandomizedBadContent,
+                                        &ContentStoreImpl< Policy >::SetRandomizedBadContent),
+                   MakeBooleanChecker ())
 
     .AddTraceSource ("DidAddEntry", "Trace fired every time entry is successfully added to the cache",
                      MakeTraceSourceAccessor (&ContentStoreImpl< Policy >::m_didAddEntry))
@@ -384,7 +397,14 @@ ContentStoreImpl<Policy>::PopulateSingle (ContentType type)
   // Add signature
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  srand((int)Simulator::Now().GetNanoSeconds() + tv.tv_usec);
+  if (randomized_bad_content == true)
+    {
+      srand((int)Simulator::Now().GetNanoSeconds() + tv.tv_usec);
+    }
+  else
+    {
+      srand(0);
+    }
   header->SetSignature(rand());
   // Computing the hash in the content header
   header->SetHash(header->ComputeHash());
@@ -469,6 +489,20 @@ bool
 ContentStoreImpl<Policy>::GetDisableRanking () const
 {
   return this->disable_ranking;
+}
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::SetRandomizedBadContent (bool randomizedBadContent)
+{
+  this->randomized_bad_content = randomizedBadContent;
+}
+
+template<class Policy>
+bool
+ContentStoreImpl<Policy>::GetRandomizedBadContent () const
+{
+  return this->randomized_bad_content;
 }
 
 template<class Policy>
