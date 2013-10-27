@@ -208,7 +208,7 @@ protected:
                  int32_t /*hop count*/> m_firstInterestDataDelay;
   TracedCallback<Ptr<const ContentObject> > m_badContentReceivedTrace;
   TracedCallback<Ptr<const ContentObject> > m_goodContentReceivedTrace;
-  TracedCallback<Ptr<const ContentObject>, const ns3::Time > m_stoppedOnGoodContentTrace;
+  TracedCallback<Ptr<const ContentObject>, ns3::Time > m_stoppedOnGoodContentTrace;
 
 /// @endcond
 };
