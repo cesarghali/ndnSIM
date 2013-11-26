@@ -176,6 +176,9 @@ public:
   Populate () = 0;
 
   virtual void
+  Populate (int contentCount, int goodContentCount) = 0;
+
+  virtual void
   Populate (std::string badContentName, Time badContentFreshness, uint32_t badContentCount, uint32_t badContentPayloadSize) = 0;
 
   // /*

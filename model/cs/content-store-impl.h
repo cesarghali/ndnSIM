@@ -101,6 +101,9 @@ public:
   PopulateSingle (ContentType type);
 
   virtual inline void
+  Populate (int contentCount, int goodContentCount);
+
+  virtual inline void
   Populate ();
 
   virtual inline void
@@ -413,7 +416,7 @@ ContentStoreImpl<Policy>::PopulateSingle (ContentType type)
     {
       header->SetSignature(rand());
     }
-  else
+  else if (type == ANY)
     {
       double r = (double)rand() / RAND_MAX;
       if (bad_content_rate != 0 && r <= bad_content_rate)
@@ -427,6 +430,40 @@ ContentStoreImpl<Policy>::PopulateSingle (ContentType type)
   packet->AddTrailer (tail);
 
   Add (header, packet);
+}
+
+template<class Policy>
+void
+ContentStoreImpl<Policy>::Populate (int contentCount, int goodContentCount)
+{
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  srand((int)Simulator::Now().GetNanoSeconds() + tv.tv_usec);
+
+  bool* badContent = ((bool*)(malloc(sizeof(bool) * contentCount)));
+  memset(badContent, true, contentCount);
+  for (int i = 0; i < goodContentCount; i++)
+    {
+      int index;
+      do
+        {
+          index = rand() % contentCount;
+        } while(badContent[index] == false);
+
+      badContent[index] = false;
+    }
+
+  for (int i = 0; i < contentCount; i++)
+    {
+      if (badContent[i] == false)
+        {
+          PopulateSingle(GOOD);
+        }
+      else
+        {
+          PopulateSingle(BAD);
+        }
+    }
 }
 
 template<class Policy>
