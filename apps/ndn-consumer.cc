@@ -102,6 +102,8 @@ Consumer::Consumer ()
   , m_seqMax (0) // don't request anything
   , count (0)
 {
+  m_useInterval = false;
+
   NS_LOG_FUNCTION_NOARGS ();
 
   m_rtt = CreateObject<RttMeanDeviation> ();

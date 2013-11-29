@@ -136,6 +136,8 @@ protected:
   Time            m_retxTimer; ///< @brief Currently estimated retransmission timer
   EventId         m_retxEvent; ///< @brief Event to check whether or not retransmission should be performed
 
+  double          m_interval;
+  bool            m_useInterval;
   double          m_exclusionRate;   ///< @brief exclusion rate of received contents in future interests≈
   bool            m_disableExclusion;
   bool            m_malicious;

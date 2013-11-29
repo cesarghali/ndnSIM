@@ -64,6 +64,12 @@ ConsumerCbr::GetTypeId (void)
                    MakeIntegerAccessor (&ConsumerCbr::m_seqMax),
                    MakeIntegerChecker<uint32_t> ())
 
+    .AddAttribute ("Interval",
+                   "Define the interval in which interest will be sent",
+                   DoubleValue (0.0),
+                   MakeDoubleAccessor (&ConsumerCbr::m_interval),
+                   MakeDoubleChecker<double> ())
+
     .AddAttribute ("ExclusionRate",
                    "The exclusion rate of received contents in future interests. If set to 0, bad content will be excluded, otherwise, this rate forces exclusion",
                    DoubleValue (0.0),
@@ -127,12 +133,22 @@ ConsumerCbr::ScheduleNextPacket ()
       m_firstTime = false;
     }
   else if (!m_sendEvent.IsRunning ())
-    m_sendEvent = Simulator::Schedule (
-                                       (m_random == 0) ?
-                                         Seconds(1.0 / m_frequency)
-                                       :
-                                         Seconds(m_random->GetValue ()),
-                                       &Consumer::SendPacket, this);
+    {
+      if (m_useInterval == true)
+        {
+          m_sendEvent = Simulator::Schedule (Seconds (m_interval),
+                                             &Consumer::SendPacket, this);
+        }
+      else
+        {
+          m_sendEvent = Simulator::Schedule (
+                                             (m_random == 0) ?
+                                             Seconds(1.0 / m_frequency)
+                                             :
+                                             Seconds(m_random->GetValue ()),
+                                             &Consumer::SendPacket, this);
+        }
+    }
 }
 
 void
@@ -143,11 +159,16 @@ ConsumerCbr::SetRandomize (const std::string &value)
 
   if (value == "uniform")
     {
-      m_random = new UniformVariable (0.0, 2 * 1.0 / m_frequency);
+      // m_random = new UniformVariable (0.0, 2 * 1.0 / m_frequency);
+      m_random = new UniformVariable ((1.0 / m_frequency) - ((1.0 / m_frequency) / 2), (1.0 / m_frequency) + ((1.0 / m_frequency) / 2));
     }
   else if (value == "exponential")
     {
       m_random = new ExponentialVariable (1.0 / m_frequency, 50 * 1.0 / m_frequency);
+    }
+  else if (value == "interval")
+    {
+      m_useInterval = true;
     }
   else
     m_random = 0;
