@@ -1,13 +1,9 @@
-To successfully compile ndnSIM, it is necessary to use a custom branch of NS-3. 
+Disclaimer
+==========
 
-This branch can be cloned from https://github.com/cawka/ns-3-dev-ndnSIM
+This version of the ranking algorithm is implemented in [ndnSIM 1.0](http://ndnsim.net/1.0/). Therefore, it might not be compatible with the current ndnSIM version.
 
-        mkdir ndnSIM
-        cd ndnSIM
-        git clone git://github.com/cawka/ns-3-dev-ndnSIM.git ns-3
-        git clone git://github.com/cawka/pybindgen.git pybindgen
-        git clone git://github.com/NDN-Routing/ndnSIM.git ns-3/src/ndnSIM
+For more details check:
 
-For more information, including downloading and compilation instruction, please refer to documentation in doc/ or on http://ndnsim.net
-
+Cesar Ghali, Gene Tsudik, and Ersin Uzun. "Needle in a haystack: Mitigating content poisoning in named-data networking." Proceedings of NDSS Workshop on Security of Emerging Networking Technologies (SENT). 2014.
 
